@@ -1,0 +1,136 @@
+# TaxSathi AI — Docker Compose
+# Full local development stack
+# Usage: docker-compose up --build
+
+version: '3.9'
+
+services:
+  # ─── FastAPI Backend ──────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: taxsathi-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - backend-uploads:/app/uploads
+      - backend-chroma:/app/chroma_data
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - taxsathi-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── PostgreSQL Database ─────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: taxsathi-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: taxsathi
+      POSTGRES_PASSWORD: taxsathi_secret
+      POSTGRES_DB: taxsathi_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - taxsathi-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxsathi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis Cache ─────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: taxsathi-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - taxsathi-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Celery Worker ───────────────────────────
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: taxsathi-celery
+    command: celery -A app.celery_worker worker --loglevel=info
+    env_file:
+      - ./backend/.env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+      - backend-uploads:/app/uploads
+      - backend-chroma:/app/chroma_data
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - taxsathi-net
+    restart: unless-stopped
+
+  # ─── Frontend (Dev Server) ───────────────────
+  frontend:
+    build:
+      context: ./frontend-web
+      dockerfile: Dockerfile
+    container_name: taxsathi-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend-web/src:/app/src
+      - ./frontend-web/public:/app/public
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+    networks:
+      - taxsathi-net
+    restart: unless-stopped
+
+  # ─── Nginx Reverse Proxy ─────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: taxsathi-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - taxsathi-net
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  backend-uploads:
+  backend-chroma:
+
+networks:
+  taxsathi-net:
+    driver: bridge
