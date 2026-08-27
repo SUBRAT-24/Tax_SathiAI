@@ -25,28 +25,28 @@ from app.api.v1.admin import router as admin_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan — startup and shutdown events."""
-    print(f"🚀 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"   Environment: {settings.ENVIRONMENT}")
     print(f"   Debug: {settings.DEBUG}")
 
     # Initialize database
     await init_db()
-    print("   ✅ Database initialized")
+    print("   [OK] Database initialized")
 
     # Create upload directories
     import os
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.CHROMADB_PERSIST_DIR, exist_ok=True)
-    print("   ✅ Upload directories ready")
+    print("   [OK] Upload directories ready")
 
-    print(f"   ✅ {settings.APP_NAME} is ready!")
-    print(f"   📖 Docs: http://localhost:8000/docs")
+    print(f"   [OK] {settings.APP_NAME} is ready!")
+    print(f"   [DOCS] Docs: http://localhost:8000/docs")
 
     yield
 
     # Shutdown
     await close_db()
-    print(f"👋 {settings.APP_NAME} shutting down")
+    print(f"[EXIT] {settings.APP_NAME} shutting down")
 
 
 # Create FastAPI app
@@ -117,7 +117,7 @@ async def root():
             "status": "running",
             "environment": settings.ENVIRONMENT,
         },
-        "message": "TaxSathi AI is running 🚀",
+        "message": "TaxSathi AI is running",
     }
 
 

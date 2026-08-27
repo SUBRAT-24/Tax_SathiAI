@@ -64,7 +64,7 @@ function AnimatedRoutes() {
       {isAppPage && <Navbar />}
       {isAppPage && <Sidebar />}
 
-      <div className={isAppPage ? 'app-main' : ''}>
+      <div className={isAppPage ? 'app-main' : ''} style={!isAppPage ? { flex: 1, width: '100%' } : {}}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             {/* Public */}
