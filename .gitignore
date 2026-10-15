@@ -12,8 +12,13 @@ venv/
 .venv/
 env/
 
-# Environment variables
+# Environment variables — NEVER commit .env files
 .env
+.env.local
+.env.*.local
+backend/.env
+frontend-web/.env
+!.env.example
 
 # Database
 *.db

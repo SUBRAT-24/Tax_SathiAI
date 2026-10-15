@@ -97,4 +97,8 @@ def verify_admin_credentials(email: str, password: str) -> bool:
     """Verify admin credentials against environment variables."""
     if email != settings.ADMIN_EMAIL:
         return False
-    return verify_password(password, settings.ADMIN_PASSWORD_HASH)
+    password_hash = settings.ADMIN_PASSWORD_HASH
+    if not password_hash:
+        return False  # ADMIN_PASSWORD not configured
+    return verify_password(password, password_hash)
+

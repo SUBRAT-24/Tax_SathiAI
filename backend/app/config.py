@@ -1,12 +1,26 @@
 """
 TaxSathi AI — Application Configuration
 All settings loaded from environment variables via Pydantic Settings.
+
+SECURITY:
+  In production (ENVIRONMENT=production) the app refuses to start if:
+    - SECRET_KEY / JWT_SECRET_KEY are missing or match a known insecure default.
+    - ADMIN_PASSWORD is unset (the hash is computed at startup, never stored as a default).
 """
 
+import sys
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing import Optional
-import os
+
+
+# ── Known-insecure defaults that MUST be rejected in production ──────────
+_INSECURE_SECRETS = frozenset({
+    "",
+    "taxsathi-dev-secret-key-change-in-production",
+    "jwt-secret-key-change-in-production",
+    "change-me-to-a-very-long-random-secret-string-32-chars",
+})
 
 
 class Settings(BaseSettings):
@@ -17,7 +31,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
     ENVIRONMENT: str = "development"  # development | staging | production
-    SECRET_KEY: str = "taxsathi-dev-secret-key-change-in-production"
+    SECRET_KEY: str = ""  # REQUIRED in production
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./taxsathi.db"
@@ -27,17 +41,19 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # JWT
-    JWT_SECRET_KEY: str = "jwt-secret-key-change-in-production"
+    JWT_SECRET_KEY: str = ""  # REQUIRED in production
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Admin (Single super admin — no registration)
+    # Admin — plaintext password from env, hashed at runtime.
+    # The old hardcoded bcrypt hash has been removed.
     ADMIN_EMAIL: str = "admin@taxsathi.ai"
-    ADMIN_PASSWORD_HASH: str = "$2b$12$LJ3m4ys3Lk0TSwHjWz1eYOQHiGmVNGboJMfDf1Ec9hGMWY/jTvniu"  # admin123
+    ADMIN_PASSWORD: str = ""  # REQUIRED in production; hashed at startup
 
     # LLM — Google Gemini (primary)
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # LLM — OpenAI (fallback)
     OPENAI_API_KEY: Optional[str] = None
@@ -86,12 +102,78 @@ class Settings(BaseSettings):
     # Maintenance Mode
     MAINTENANCE_MODE: bool = False
 
+    # ── Computed at startup ──────────────────────────────────────────
+    _admin_password_hash: str = ""
+
+    @property
+    def ADMIN_PASSWORD_HASH(self) -> str:
+        """Return the bcrypt hash of ADMIN_PASSWORD (computed once)."""
+        return self._admin_password_hash
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "extra": "ignore",
     }
+
+    @model_validator(mode="after")
+    def _validate_security(self) -> "Settings":
+        """Block startup if critical secrets use insecure defaults in production."""
+        is_prod = self.ENVIRONMENT in ("production", "staging")
+
+        errors: list[str] = []
+
+        if is_prod:
+            if self.SECRET_KEY in _INSECURE_SECRETS:
+                errors.append(
+                    "SECRET_KEY is missing or matches a known insecure default. "
+                    "Generate one: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                )
+            if self.JWT_SECRET_KEY in _INSECURE_SECRETS:
+                errors.append(
+                    "JWT_SECRET_KEY is missing or matches a known insecure default. "
+                    "Generate one: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                )
+            if not self.ADMIN_PASSWORD:
+                errors.append(
+                    "ADMIN_PASSWORD must be set in the environment for production."
+                )
+
+        if errors:
+            msg = (
+                "\n\n⛔  SECURITY: Refusing to start in "
+                f"{self.ENVIRONMENT} mode:\n  • "
+                + "\n  • ".join(errors)
+                + "\n"
+            )
+            print(msg, file=sys.stderr)
+            raise SystemExit(1)
+
+        # ── Dev-mode fallbacks so local development still works ──────
+        if not is_prod:
+            if self.SECRET_KEY in _INSECURE_SECRETS:
+                # Use a reproducible-but-not-production key for dev only
+                object.__setattr__(
+                    self, "SECRET_KEY",
+                    "dev-only-secret-do-not-use-in-production"
+                )
+            if self.JWT_SECRET_KEY in _INSECURE_SECRETS:
+                object.__setattr__(
+                    self, "JWT_SECRET_KEY",
+                    "dev-only-jwt-secret-do-not-use-in-production"
+                )
+
+        # ── Hash ADMIN_PASSWORD at startup ──────────────────────────
+        if self.ADMIN_PASSWORD:
+            import bcrypt
+            hashed = bcrypt.hashpw(
+                self.ADMIN_PASSWORD.encode("utf-8"),
+                bcrypt.gensalt(),
+            ).decode("utf-8")
+            object.__setattr__(self, "_admin_password_hash", hashed)
+
+        return self
 
 
 settings = Settings()
