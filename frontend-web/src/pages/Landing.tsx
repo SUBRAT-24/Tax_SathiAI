@@ -1,14 +1,22 @@
 /**
  * Landing Page — Hero with word-by-word reveal, feature cards, stats counter,
- * floating particles, CTA, testimonials.
+ * floating particles, CTA.
+ *
+ * HyperFrames motion doctrine applied:
+ *  - §6 Waterfall entry: hero words whip from below with binary opacity snap.
+ *  - Final word split into 3 fragments to extend cascade climax.
+ *  - Feature cards use staggerItemHeavy (anchor weight — further travel).
+ *  - Floating particles: Y travel only, no idle rotation.
+ *  - Stats reveal via inverse-zoom (Z-backward payoff beats).
+ *  - CTA button has stillness delay before CTA — stillness before climax.
  */
 
 import { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useInView, animate } from 'framer-motion';
 import {
-  wordRevealContainer, wordReveal, staggerContainer, staggerItem,
-  scaleTap, buttonTap, pageVariants, pageTransition
+  wordRevealContainer, wordReveal, staggerContainer, staggerItemHeavy,
+  scaleTap, buttonTap, pageVariants, pageTransition, counterVariants,
 } from '../animations/variants';
 import {
   Sparkles, MessageSquare, Shield, Calculator, FileText,
@@ -35,18 +43,18 @@ function Counter({ from = 0, to, suffix = '', prefix = '' }: { from?: number; to
   return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>;
 }
 
-// ─── Floating Particle ────────────────────
+// ─── Floating Particle ────────────────────────────────────────────────
+// HyperFrames: no idle rotation or x-drift — motion must PERFORM, not breathe.
+// Y travel only. No X drift (it fights the leftward current).
 function FloatingParticle({ delay, size, x, y, color }: any) {
   return (
     <motion.div
       animate={{
-        y: [0, -30, 0],
-        x: [0, 15, 0],
-        opacity: [0.2, 0.6, 0.2],
-        rotate: [0, 180, 360],
+        y: [0, -18, 0],
+        opacity: [0.25, 0.65, 0.25],
       }}
       transition={{
-        duration: 6 + Math.random() * 4,
+        duration: 5 + Math.random() * 3,
         delay,
         repeat: Infinity,
         ease: 'easeInOut' as const,
@@ -59,8 +67,9 @@ function FloatingParticle({ delay, size, x, y, color }: any) {
         background: color,
         left: x,
         top: y,
-        filter: 'blur(1px)',
+        filter: 'blur(1.5px)',
         pointerEvents: 'none',
+        willChange: 'transform',
       }}
     />
   );
@@ -166,7 +175,8 @@ export default function Landing() {
             <Sparkles size={14} /> Powered by RAG + Gemini AI
           </motion.div>
 
-          {/* Word-by-word reveal */}
+          {/* Hero word cascade — §6 Waterfall Entry */}
+          {/* Final word "Partner" split into 3 fragments to extend the climax */}
           <motion.h1
             variants={wordRevealContainer}
             initial="hidden"
@@ -174,12 +184,12 @@ export default function Landing() {
             style={{
               fontSize: 'clamp(2.5rem, 5vw, 4rem)',
               fontWeight: 900,
-              lineHeight: 1.1,
+              lineHeight: 1.15,
               letterSpacing: '-0.03em',
               marginBottom: 24,
             }}
           >
-            {heroWords.map((word, i) => (
+            {heroWords.slice(0, -1).map((word, i) => (
               <motion.span
                 key={i}
                 variants={wordReveal}
@@ -195,27 +205,46 @@ export default function Landing() {
                 {word}
               </motion.span>
             ))}
+            {/* Final word fragments — climax extension (travel further, longer) */}
+            {['Part', 'n', 'er'].map((frag, i) => (
+              <motion.span
+                key={`frag-${i}`}
+                variants={{
+                  hidden: { opacity: 0, y: i === 0 ? 56 : i === 1 ? 64 : 72 },
+                  visible: {
+                    opacity: 1, y: 0,
+                    transition: {
+                      opacity: { duration: 0.001 },
+                      y: { duration: 0.18 + i * 0.02, ease: [0.16, 1, 0.3, 1] as any },
+                    },
+                  },
+                }}
+                style={{ display: 'inline-block' }}
+              >
+                {frag}
+              </motion.span>
+            ))}
           </motion.h1>
 
-          {/* Subtitle */}
+          {/* Subtitle — binary snap entry after cascade settles */}
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
+            transition={{ delay: 1.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontSize: '1.15rem', color: 'var(--color-text-secondary)',
-              maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.7,
+              maxWidth: 600, margin: '0 auto 44px', lineHeight: 1.75,
             }}
           >
             Get instant, accurate, cited answers about GST rules, ITC claims,
             return filing, penalties, and tax compliance — powered by AI over official CBIC documents.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons — stillness-before-climax: delay 1.5s after cascade */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 }}
+            transition={{ delay: 1.5, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}
           >
             <Link to="/register">
@@ -257,7 +286,14 @@ export default function Landing() {
           }}
         >
           {stats.map((stat, i) => (
-            <motion.div key={i} variants={staggerItem}>
+            // Each stat is an inverse-zoom payoff beat (Z backward arrival)
+            <motion.div
+              key={i}
+              variants={counterVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
               <div style={{
                 fontSize: '2.5rem', fontWeight: 900, marginBottom: 4,
                 background: 'var(--gradient-primary)',
@@ -304,10 +340,11 @@ export default function Landing() {
             {features.map((feature, i) => {
               const Icon = feature.icon;
               return (
+                // staggerItemHeavy = anchor weight: 72px travel, 0.2s duration
                 <motion.div
                   key={i}
-                  variants={staggerItem}
-                  whileHover={{ y: -6, boxShadow: `0 12px 40px rgba(99,102,241,0.15)` }}
+                  variants={staggerItemHeavy}
+                  className="card-cinematic card-accent-border"
                   style={{
                     padding: 28,
                     background: 'var(--color-bg-glass)',
@@ -315,23 +352,23 @@ export default function Landing() {
                     border: '1px solid var(--border-color)',
                     borderRadius: 'var(--border-radius-lg)',
                     cursor: 'default',
-                    transition: 'border-color 0.3s',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = feature.color + '40')}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = feature.color + '50')}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(148,163,184,0.1)')}
                 >
                   <div style={{
                     width: 48, height: 48, borderRadius: 12,
-                    background: feature.color + '15',
+                    background: feature.color + '18',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     marginBottom: 16,
+                    boxShadow: `0 0 16px ${feature.color}22`,
                   }}>
                     <Icon size={22} color={feature.color} />
                   </div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>
                     {feature.title}
                   </h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>
                     {feature.desc}
                   </p>
                 </motion.div>

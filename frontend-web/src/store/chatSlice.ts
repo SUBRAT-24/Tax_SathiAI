@@ -152,7 +152,14 @@ const chatSlice = createSlice({
       })
       .addCase(sendQuery.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        const errorMsg = (action.payload as string) || 'Something went wrong. Please try again.';
+        state.error = errorMsg;
+        state.messages.push({
+          id: Date.now(),
+          role: 'assistant',
+          content: `⚠️ **Error**: ${errorMsg}\n\nPlease check your connection and try again.`,
+          timestamp: new Date().toISOString(),
+        });
       })
       .addCase(fetchSuggestions.fulfilled, (state, action) => {
         state.suggestions = action.payload;

@@ -1,0 +1,502 @@
+[
+  {
+    "hsn_code": "0101",
+    "description": "Live horses, asses, mules and hinnies",
+    "chapter": "01",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 1"
+  },
+  {
+    "hsn_code": "0201",
+    "description": "Meat of bovine animals, fresh or chilled (other than pre-packaged and labelled)",
+    "chapter": "02",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 4"
+  },
+  {
+    "hsn_code": "0401",
+    "description": "Fresh milk and pasteurised milk, not concentrated nor containing added sugar",
+    "chapter": "04",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 25"
+  },
+  {
+    "hsn_code": "0402",
+    "description": "Milk and cream, concentrated or containing added sugar or other sweetening matter, including condensed milk",
+    "chapter": "04",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule I, Entry 8"
+  },
+  {
+    "hsn_code": "0406",
+    "description": "Cheese of all kinds",
+    "chapter": "04",
+    "gst_rate": 12,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule II, Entry 13"
+  },
+  {
+    "hsn_code": "0406",
+    "description": "Cheese of all kinds (rate rationalized)",
+    "chapter": "04",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting Recommendations, 22 Sep 2025"
+  },
+  {
+    "hsn_code": "0701",
+    "description": "Potatoes, fresh or chilled (other than pre-packaged and labelled)",
+    "chapter": "07",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 36"
+  },
+  {
+    "hsn_code": "0702",
+    "description": "Tomatoes, fresh or chilled",
+    "chapter": "07",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 37"
+  },
+  {
+    "hsn_code": "0703",
+    "description": "Onions, shallots, garlic, leeks, fresh or chilled",
+    "chapter": "07",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 38"
+  },
+  {
+    "hsn_code": "0801",
+    "description": "Coconuts, Brazil nuts and cashew nuts, fresh or dried, whether or not shelled or peeled",
+    "chapter": "08",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule I, Entry 27"
+  },
+  {
+    "hsn_code": "0901",
+    "description": "Coffee, whether or not roasted or decaffeinated; coffee husks and skins; coffee substitutes",
+    "chapter": "09",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule I, Entry 31"
+  },
+  {
+    "hsn_code": "0902",
+    "description": "Tea, whether or not flavoured",
+    "chapter": "09",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule I, Entry 32"
+  },
+  {
+    "hsn_code": "1006",
+    "description": "Rice (other than pre-packaged and labelled)",
+    "chapter": "10",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 2/2017-Central Tax (Rate), Entry 45"
+  },
+  {
+    "hsn_code": "1006",
+    "description": "Rice, pre-packaged and labelled",
+    "chapter": "10",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2022-07-18",
+    "effective_to": null,
+    "notification": "Notification No. 6/2022-Central Tax (Rate), 13 Jul 2022"
+  },
+  {
+    "hsn_code": "1701",
+    "description": "Cane or beet sugar and chemically pure sucrose, in solid form",
+    "chapter": "17",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule I, Entry 91"
+  },
+  {
+    "hsn_code": "1905",
+    "description": "Bread, pastry, cakes, biscuits and other bakers wares, whether or not containing cocoa",
+    "chapter": "19",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule III, Entry 16"
+  },
+  {
+    "hsn_code": "2201",
+    "description": "Waters, including natural or artificial mineral waters and aerated waters, not containing added sugar",
+    "chapter": "22",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule III, Entry 24"
+  },
+  {
+    "hsn_code": "2202",
+    "description": "Aerated waters containing added sugar or other sweetening matter or flavoured",
+    "chapter": "22",
+    "gst_rate": 28,
+    "cess_rate": 12,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule IV, Entry 12; Compensation Cess Notif. 1/2017-CC(R)"
+  },
+  {
+    "hsn_code": "2202",
+    "description": "Aerated waters containing added sugar or other sweetening matter (rationalized slab)",
+    "chapter": "22",
+    "gst_rate": 40,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting, luxury/demerit rate rationalization"
+  },
+  {
+    "hsn_code": "3004",
+    "description": "Medicaments consisting of mixed or unmixed products for therapeutic or prophylactic uses",
+    "chapter": "30",
+    "gst_rate": 12,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule II, Entry 63"
+  },
+  {
+    "hsn_code": "3004",
+    "description": "Medicaments consisting of mixed or unmixed products for therapeutic uses (rationalized to 5%)",
+    "chapter": "30",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting Recommendations, 22 Sep 2025"
+  },
+  {
+    "hsn_code": "3304",
+    "description": "Beauty or make-up preparations and preparations for the care of the skin (other than medicaments)",
+    "chapter": "33",
+    "gst_rate": 28,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule IV, Entry 28"
+  },
+  {
+    "hsn_code": "3304",
+    "description": "Beauty or make-up preparations and preparations for the care of the skin (rationalized to 18%)",
+    "chapter": "33",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting Recommendations, 22 Sep 2025"
+  },
+  {
+    "hsn_code": "3401",
+    "description": "Soap; organic surface-active products and preparations for use as soap",
+    "chapter": "34",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule III, Entry 54"
+  },
+  {
+    "hsn_code": "4820",
+    "description": "Registers, account books, note books, order books, receipt books, letter pads, memorandum pads",
+    "chapter": "48",
+    "gst_rate": 12,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule II, Entry 123"
+  },
+  {
+    "hsn_code": "4820",
+    "description": "Registers, note books, order books, exercise books (rationalized to 5%)",
+    "chapter": "48",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting, educational goods rationalization"
+  },
+  {
+    "hsn_code": "7102",
+    "description": "Diamonds, whether or not worked, but not mounted or set (rough diamonds)",
+    "chapter": "71",
+    "gst_rate": 0.25,
+    "cess_rate": 0,
+    "effective_from": "2018-01-25",
+    "effective_to": null,
+    "notification": "Notification No. 1/2018-Central Tax (Rate), 25 Jan 2018"
+  },
+  {
+    "hsn_code": "7113",
+    "description": "Articles of jewellery and parts thereof, of precious metal or of metal clad with precious metal (gold/silver/platinum)",
+    "chapter": "71",
+    "gst_rate": 3,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule V, Entry 13"
+  },
+  {
+    "hsn_code": "8415",
+    "description": "Air conditioning machines, comprising a motor-driven fan and elements for changing temperature and humidity",
+    "chapter": "84",
+    "gst_rate": 28,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule IV, Entry 119"
+  },
+  {
+    "hsn_code": "8415",
+    "description": "Air conditioning machines (rationalized from 28% to 18%)",
+    "chapter": "84",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting Recommendations, 22 Sep 2025"
+  },
+  {
+    "hsn_code": "8471",
+    "description": "Automatic data processing machines and units thereof; magnetic or optical readers, machines for transcribing data (computers/laptops)",
+    "chapter": "84",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule III, Entry 360"
+  },
+  {
+    "hsn_code": "8517",
+    "description": "Telephone sets, including smartphones and other telephones for cellular networks",
+    "chapter": "85",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2020-04-01",
+    "effective_to": null,
+    "notification": "Notification No. 03/2020-Central Tax (Rate), 25 Mar 2020"
+  },
+  {
+    "hsn_code": "8528",
+    "description": "Monitors and projectors, not incorporating television reception apparatus; reception apparatus for television (LED/LCD TVs)",
+    "chapter": "85",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2019-01-01",
+    "effective_to": null,
+    "notification": "Notification No. 24/2018-Central Tax (Rate), 31 Dec 2018"
+  },
+  {
+    "hsn_code": "8703",
+    "description": "Motor cars and other motor vehicles principally designed for transport of persons (petrol/diesel/hybrid)",
+    "chapter": "87",
+    "gst_rate": 28,
+    "cess_rate": 22,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule IV, Entry 166; Compensation Cess Notif. 1/2017-CC(R)"
+  },
+  {
+    "hsn_code": "8703",
+    "description": "Motor cars and other motor vehicles (sin/luxury rationalized slab)",
+    "chapter": "87",
+    "gst_rate": 40,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting, luxury/sin slab rationalization"
+  },
+  {
+    "hsn_code": "8711",
+    "description": "Motorcycles (including mopeds) and cycles fitted with an auxiliary motor, with or without side-cars (engine capacity <= 350cc)",
+    "chapter": "87",
+    "gst_rate": 28,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 1/2017-Central Tax (Rate), Schedule IV, Entry 171"
+  },
+  {
+    "hsn_code": "8711",
+    "description": "Motorcycles (including mopeds) engine capacity <= 350cc (rationalized to 18%)",
+    "chapter": "87",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting Recommendations, 22 Sep 2025"
+  },
+  {
+    "hsn_code": "9954",
+    "description": "General construction services of buildings and civil engineering works",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9954"
+  },
+  {
+    "hsn_code": "9963",
+    "description": "Accommodation, food and beverage services (restaurants without alcohol/air-conditioned)",
+    "chapter": "99",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-11-15",
+    "effective_to": null,
+    "notification": "Notification No. 46/2017-Central Tax (Rate), 14 Nov 2017"
+  },
+  {
+    "hsn_code": "9964",
+    "description": "Passenger transport services (air travel - economy class)",
+    "chapter": "99",
+    "gst_rate": 5,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9964"
+  },
+  {
+    "hsn_code": "9964",
+    "description": "Passenger transport services (air travel - business class)",
+    "chapter": "99",
+    "gst_rate": 12,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": "2025-09-21",
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9964"
+  },
+  {
+    "hsn_code": "9964",
+    "description": "Passenger transport services (air travel - business class rationalized to 18%)",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2025-09-22",
+    "effective_to": null,
+    "notification": "56th GST Council Meeting Recommendations, 22 Sep 2025"
+  },
+  {
+    "hsn_code": "9971",
+    "description": "Financial and related services including banking, financial leasing, lending and insurance",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9971"
+  },
+  {
+    "hsn_code": "9972",
+    "description": "Real estate services involving own or leased property",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9972"
+  },
+  {
+    "hsn_code": "9982",
+    "description": "Legal services provided by an advocate or firm of advocates (reverse charge on recipient business)",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 13/2017-Central Tax (Rate), Entry 2"
+  },
+  {
+    "hsn_code": "9983",
+    "description": "Other professional, technical and business services (consulting, legal, accounting, auditing, engineering, IT architecture)",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9983"
+  },
+  {
+    "hsn_code": "9992",
+    "description": "Education services provided by an educational institution to its students, faculty and staff",
+    "chapter": "99",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 12/2017-Central Tax (Rate), Entry 66"
+  },
+  {
+    "hsn_code": "9993",
+    "description": "Human health care services by a clinical establishment, authorised medical practitioner or paramedics",
+    "chapter": "99",
+    "gst_rate": 0,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 12/2017-Central Tax (Rate), Entry 74"
+  },
+  {
+    "hsn_code": "9996",
+    "description": "Recreational, cultural and sporting services (theatres, circus, sporting events)",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9996"
+  },
+  {
+    "hsn_code": "9997",
+    "description": "Other services (maintenance, repair, washing, beauty treatment, dry cleaning)",
+    "chapter": "99",
+    "gst_rate": 18,
+    "cess_rate": 0,
+    "effective_from": "2017-07-01",
+    "effective_to": null,
+    "notification": "Notification No. 11/2017-Central Tax (Rate), Section 5, Heading 9997"
+  }
+]

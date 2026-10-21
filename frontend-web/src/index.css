@@ -396,3 +396,179 @@ img {
 .react-hot-toast {
   font-family: var(--font-sans) !important;
 }
+
+/* ─── HyperFrames Motion Doctrine — CSS Utilities ─── */
+
+/* Opaque stage ground — prevents white-flash at cut windows.
+   Any element using cut-the-curve or zoom-through must sit
+   on an opaque background so the mid-opacity window doesn't show white. */
+#root {
+  background: var(--color-bg-primary);   /* opaque stage ground */
+}
+
+/* cut-the-curve link & nav hover — leftward micro-travel (the current) */
+.nav-link-motion {
+  position: relative;
+  transition: color var(--transition-fast);
+}
+.nav-link-motion::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  border-radius: var(--border-radius-full);
+  transition: width 0.3s cubic-bezier(0, 0, 0.1, 1); /* power4.out */
+}
+.nav-link-motion:hover::after,
+.nav-link-motion.active::after {
+  width: 100%;
+}
+
+/* Waterfall-entry stagger class — apply to list parents */
+.waterfall-parent > * {
+  will-change: transform, opacity;
+}
+
+/* Card cinematic hover — lift + glow guard + border reveal */
+.card-cinematic {
+  transition:
+    transform  0.28s cubic-bezier(0.16, 1, 0.3, 1),  /* expo.out */
+    box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.card-cinematic:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 16px 48px rgba(99, 102, 241, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+/* Button primary — sustained glow on hover (no bounce or spring) */
+.btn-primary {
+  transition:
+    transform  0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    filter     0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 32px rgba(99, 102, 241, 0.45),
+    0 8px 24px rgba(99, 102, 241, 0.25);
+  filter: brightness(1.08);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+/* Nudge cursor interaction — input fields shift slightly on focus */
+.input {
+  transition:
+    border-color  0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow    0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform     0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.input:focus {
+  transform: translateY(-1px);  /* subtle nudge upward on focus */
+}
+
+/* Rack-focus blur-cut utility — use on image/screenshot swap elements */
+.rack-focus-enter {
+  animation: rack-focus-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes rack-focus-in {
+  0%   { filter: blur(10px); opacity: 0.15; }
+  100% { filter: blur(0px);  opacity: 1;    }
+}
+
+/* Inverse zoom arrival — Z-backward for modal / dialog overlays */
+.inverse-zoom-entry {
+  animation: inverse-zoom 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes inverse-zoom {
+  0%   { transform: scale(1.06); filter: blur(8px);  opacity: 0.15; }
+  100% { transform: scale(1);    filter: blur(0px); opacity: 1;    }
+}
+
+/* Seam gate utility — stat/metric cards reveal from Z depth */
+.stat-reveal {
+  animation: stat-zoom-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes stat-zoom-in {
+  0%   { transform: scale(1.04); opacity: 0.2; }
+  100% { transform: scale(1);    opacity: 1;   }
+}
+
+/* Sustained shimmer — for loading skeletons (not idle wobble) */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    rgba(99, 102, 241, 0.07) 37%,
+    var(--color-bg-tertiary) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Override float particle — remove idle wobble rotation (motion must perform) */
+@keyframes float {
+  0%, 100% { transform: translateY(0px);    opacity: 0.3; }
+  50%       { transform: translateY(-18px); opacity: 0.7; }
+}
+
+/* Gradient border reveal — card accent on hover */
+.card-accent-border {
+  position: relative;
+  isolation: isolate;
+}
+.card-accent-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent 40%, rgba(99, 102, 241, 0.4) 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.card-accent-border:hover::before {
+  opacity: 1;
+}
+
+/* Compliance score ring — animated conic gradient */
+.compliance-ring {
+  transition: background 1.1s cubic-bezier(0, 0, 0.1, 1);  /* power4.out settle */
+}
+
+/* Chat streaming cursor — purposeful blink (not idle breathe) */
+.streaming-cursor::after {
+  content: '▍';
+  display: inline-block;
+  color: var(--color-primary-light);
+  animation: blink-cursor 0.7s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Reduce motion — respect user preference (HyperFrames stillness rule) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

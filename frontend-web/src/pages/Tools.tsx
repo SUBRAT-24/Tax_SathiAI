@@ -11,20 +11,32 @@ import toast from 'react-hot-toast';
 
 function ToolCard({ title, icon: Icon, color, children }: any) {
   return (
-    <motion.div variants={staggerItem} whileHover={{ y: -4, boxShadow: `0 12px 40px ${color}15` }}
+    <motion.div
+      variants={staggerItem}
+      whileHover={{ y: -5, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }}
+      className="card-cinematic"
       style={{
-        padding: 24, borderRadius: 'var(--border-radius-lg)',
-        background: 'var(--color-bg-glass)', backdropFilter: 'blur(20px)',
-        border: '1px solid var(--border-color)',
+        padding: 26, borderRadius: 'var(--border-radius-lg)',
+        background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.07)',
+        position: 'relative', overflow: 'hidden',
       }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+      <div style={{
+        position: 'absolute', top: 0, right: 0, width: 140, height: 140,
+        background: `radial-gradient(circle at top right, ${color}15 0%, transparent 70%)`,
+        pointerEvents: 'none',
+      }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10, background: color + '15',
+          width: 42, height: 42, borderRadius: 12, background: color + '15',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: `1px solid ${color}30`,
+          boxShadow: `0 0 16px ${color}15`,
         }}>
           <Icon size={20} color={color} />
         </div>
-        <h3 style={{ fontWeight: 700, fontSize: '1.05rem' }}>{title}</h3>
+        <h3 style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>{title}</h3>
       </div>
       {children}
     </motion.div>
@@ -84,7 +96,7 @@ export default function Tools() {
               onChange={e => setGstForm({...gstForm, amount: e.target.value})} />
             <select className="input" value={gstForm.rate} onChange={e => setGstForm({...gstForm, rate: e.target.value})}
               style={{ background: 'var(--color-bg-secondary)' }}>
-              {[0, 3, 5, 12, 18, 28].map(r => <option key={r} value={r}>{r}%</option>)}
+              {[0, 0.25, 3, 5, 12, 18, 28, 40].map(r => <option key={r} value={r}>{r}%</option>)}
             </select>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
               <input type="checkbox" checked={gstForm.is_igst} onChange={e => setGstForm({...gstForm, is_igst: e.target.checked})} />

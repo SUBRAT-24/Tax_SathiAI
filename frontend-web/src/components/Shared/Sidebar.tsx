@@ -63,7 +63,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1 }}>
+      <nav style={{ flex: 1, position: 'relative' }}>
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -71,9 +71,10 @@ export default function Sidebar() {
           return (
             <motion.div
               key={item.path}
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              style={{ position: 'relative', marginBottom: 6 }}
             >
               <NavLink
                 to={item.path}
@@ -81,20 +82,36 @@ export default function Sidebar() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
-                  padding: '10px 14px',
+                  padding: '11px 14px',
                   borderRadius: 'var(--border-radius-md)',
-                  marginBottom: 4,
                   fontSize: '0.9rem',
                   fontWeight: isActive ? 600 : 400,
                   color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                  background: isActive ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
-                  borderLeft: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
-                  transition: 'all 0.2s ease',
+                  background: 'transparent',
                   textDecoration: 'none',
+                  position: 'relative',
+                  zIndex: 2,
+                  transition: 'color 0.15s ease',
                 }}
               >
-                <Icon size={18} />
-                {item.label}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavIndicator"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(99, 102, 241, 0.14)',
+                      borderRadius: 'var(--border-radius-md)',
+                      borderLeft: '3px solid var(--color-primary)',
+                      border: '1px solid rgba(99, 102, 241, 0.25)',
+                      zIndex: -1,
+                      boxShadow: '0 0 16px rgba(99, 102, 241, 0.12)',
+                    }}
+                  />
+                )}
+                <Icon size={18} style={{ color: isActive ? 'var(--color-primary-light)' : 'inherit' }} />
+                <span>{item.label}</span>
               </NavLink>
             </motion.div>
           );

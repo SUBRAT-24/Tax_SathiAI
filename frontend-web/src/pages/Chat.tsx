@@ -28,20 +28,31 @@ function TypingIndicator() {
     <motion.div
       variants={chatBubbleAI} initial="hidden" animate="visible"
       style={{
-        display: 'flex', alignItems: 'center', gap: 4,
-        padding: '14px 18px', background: 'var(--color-surface)',
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '12px 18px', background: 'var(--color-surface)',
         borderRadius: '16px 16px 16px 4px', width: 'fit-content',
-        border: '1px solid var(--border-color)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
       }}
     >
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' as const }}
+          animate={{
+            y: [0, -6, 0],
+            opacity: [0.4, 1, 0.4],
+            scale: [0.9, 1.15, 0.9],
+          }}
+          transition={{
+            duration: 0.8,
+            repeat: Infinity,
+            delay: i * 0.16,
+            ease: [0.16, 1, 0.3, 1],
+          }}
           style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: 'var(--color-primary)',
+            width: 7, height: 7, borderRadius: '50%',
+            background: 'var(--color-primary-light)',
+            boxShadow: '0 0 8px rgba(99, 102, 241, 0.6)',
           }}
         />
       ))}
@@ -278,25 +289,26 @@ export default function Chat() {
             }}
           >
             <motion.div
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               style={{
-                width: 80, height: 80, borderRadius: 20,
+                width: 80, height: 80, borderRadius: 24,
                 background: 'var(--gradient-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 24, boxShadow: 'var(--shadow-glow)',
+                marginBottom: 24, boxShadow: '0 0 35px rgba(99, 102, 241, 0.45)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
               }}
             >
               <Sparkles size={36} color="white" />
             </motion.div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: 8, letterSpacing: '-0.02em' }}>
               Ask me anything about <span className="gradient-text">GST & Tax</span>
             </h2>
             <p style={{
               color: 'var(--color-text-muted)', maxWidth: 500,
-              marginBottom: 32, lineHeight: 1.6,
+              marginBottom: 32, lineHeight: 1.6, fontSize: '0.95rem',
             }}>
-              I'm powered by official CBIC documents. Every answer includes source citations and confidence scores.
+              Powered by official CBIC circulars, CGST/SGST Acts, and real-time rules. Every answer includes verifiable citations.
             </p>
 
             {/* Quick question chips */}
@@ -304,21 +316,21 @@ export default function Chat() {
               variants={chipStagger} initial="hidden" animate="visible"
               style={{
                 display: 'flex', flexWrap: 'wrap', gap: 10,
-                justifyContent: 'center', maxWidth: 600,
+                justifyContent: 'center', maxWidth: 620,
               }}
             >
               {quickQuestions.map((q, i) => (
                 <motion.button
                   key={i}
                   variants={chipItem}
-                  whileHover={{ scale: 1.05, borderColor: 'var(--color-primary)' }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -3, scale: 1.02, borderColor: 'var(--color-primary-light)', boxShadow: '0 6px 20px rgba(99, 102, 241, 0.15)' }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => { setInput(q); inputRef.current?.focus(); }}
                   style={{
-                    padding: '8px 16px', borderRadius: 'var(--border-radius-full)',
-                    background: 'var(--color-surface)', border: '1px solid var(--border-color)',
-                    color: 'var(--color-text-secondary)', fontSize: '0.83rem',
-                    cursor: 'pointer', transition: 'all 0.2s',
+                    padding: '9px 18px', borderRadius: 'var(--border-radius-full)',
+                    background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: 'var(--color-text-primary)', fontSize: '0.84rem', fontWeight: 500,
+                    cursor: 'pointer', transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
                   }}
                 >
                   {q}
