@@ -241,3 +241,17 @@ def test_alembic_metadata_table_coverage():
     }
     actual_tables = set(Base.metadata.tables.keys())
     assert expected_tables.issubset(actual_tables), f"Missing tables in metadata: {expected_tables - actual_tables}"
+
+
+# ─── 9. Security Response Headers Tests ──────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_security_headers_present():
+    """Verify standard security headers are applied to all API responses."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/health")
+        assert response.status_code == 200
+        assert response.headers.get("X-Content-Type-Options") == "nosniff"
+        assert response.headers.get("X-Frame-Options") == "DENY"
+        assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+        assert "camera=()" in response.headers.get("Permissions-Policy", "")

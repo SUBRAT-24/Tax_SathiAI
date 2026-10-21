@@ -1,19 +1,23 @@
-# TaxSathi AI — Frontend Dockerfile (dev)
-FROM node:20-alpine
+# TaxSathi AI — Frontend Production Multi-Stage Dockerfile
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy source code
 COPY . .
+RUN npm run build
 
-# Expose Vite dev port
-EXPOSE 5173
+# ─── Production Server Stage ─────────────────────────────────
+FROM nginx:1.27-alpine AS runner
 
-# Start dev server accessible from outside container
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -qO- http://localhost/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

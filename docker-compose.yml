@@ -1,8 +1,5 @@
-# TaxSathi AI — Docker Compose
-# Full local development stack
-# Usage: docker-compose up --build
-
-version: '3.9'
+# TaxSathi AI — Production Docker Compose
+# Usage: docker compose up --build -d
 
 services:
   # ─── FastAPI Backend ──────────────────────────
@@ -11,20 +8,30 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: taxsathi-backend
+    restart: unless-stopped
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-taxsathi}:${POSTGRES_PASSWORD:-taxsathi_db_secret_change_in_production}@postgres:5432/${POSTGRES_DB:-taxsathi_db}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - COHERE_API_KEY=${COHERE_API_KEY}
     volumes:
-      - ./backend:/app
-      - backend-uploads:/app/uploads
-      - backend-chroma:/app/chroma_data
+      - backend-uploads:/app/data/uploads
+      - backend-chroma:/app/data/chromadb
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - taxsathi-net
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -35,84 +42,60 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: taxsathi-postgres
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: taxsathi
-      POSTGRES_PASSWORD: taxsathi_secret
-      POSTGRES_DB: taxsathi_db
+      POSTGRES_USER: ${POSTGRES_USER:-taxsathi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taxsathi_db_secret_change_in_production}
+      POSTGRES_DB: ${POSTGRES_DB:-taxsathi_db}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - taxsathi-net
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taxsathi"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taxsathi} -d ${POSTGRES_DB:-taxsathi_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─── Redis Cache ─────────────────────────────
+  # ─── Redis Cache & Distributed Rate Limiter ───
   redis:
     image: redis:7-alpine
     container_name: taxsathi-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
       - taxsathi-net
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─── Celery Worker ───────────────────────────
-  celery-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: taxsathi-celery
-    command: celery -A app.celery_worker worker --loglevel=info
-    env_file:
-      - ./backend/.env
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./backend:/app
-      - backend-uploads:/app/uploads
-      - backend-chroma:/app/chroma_data
-    depends_on:
-      - redis
-      - postgres
-    networks:
-      - taxsathi-net
-    restart: unless-stopped
-
-  # ─── Frontend (Dev Server) ───────────────────
+  # ─── React Frontend SPA (Nginx) ──────────────
   frontend:
     build:
       context: ./frontend-web
       dockerfile: Dockerfile
     container_name: taxsathi-frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend-web/src:/app/src
-      - ./frontend-web/public:/app/public
-    environment:
-      - VITE_API_URL=http://localhost:8000/api/v1
+    restart: unless-stopped
     networks:
       - taxsathi-net
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-  # ─── Nginx Reverse Proxy ─────────────────────
+  # ─── Nginx Reverse Proxy / Gateway ───────────
   nginx:
-    image: nginx:alpine
+    image: nginx:1.27-alpine
     container_name: taxsathi-nginx
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -123,7 +106,6 @@ services:
       - frontend
     networks:
       - taxsathi-net
-    restart: unless-stopped
 
 volumes:
   postgres-data:
