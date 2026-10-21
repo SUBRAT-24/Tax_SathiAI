@@ -25,6 +25,7 @@ class DocumentProcessor:
         doc_name: str,
         category: str = "general",
         doc_id: str = None,
+        user_id: Optional[str] = "system",
     ) -> dict:
         """
         Process a PDF file: extract text → chunk → embed → store.
@@ -45,6 +46,7 @@ class DocumentProcessor:
         chunks = self._chunk_text(text)
 
         # Prepare metadata for each chunk
+        resolved_user_id = str(user_id) if user_id is not None else "system"
         metadatas = []
         ids = []
         for i, chunk in enumerate(chunks):
@@ -53,6 +55,7 @@ class DocumentProcessor:
             metadatas.append({
                 "doc_name": doc_name,
                 "category": category,
+                "user_id": resolved_user_id,
                 "chunk_index": i,
                 "total_chunks": len(chunks),
                 "page_estimate": self._estimate_page(i, len(chunks)),

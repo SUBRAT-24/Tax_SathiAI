@@ -31,14 +31,35 @@ async def upload_document(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload a PDF document."""
-    # Validate file type
+    # Validate file extension
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files are allowed")
 
-    # Validate file size
+    # Read content
     content = await file.read()
+
+    # Validate file size
     if len(content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
         raise HTTPException(400, f"File size exceeds {settings.MAX_UPLOAD_SIZE_MB}MB limit")
+
+    # Validate magic bytes (%PDF)
+    if not content.startswith(b"%PDF"):
+        raise HTTPException(400, "Invalid file format: content does not match PDF specification (magic bytes mismatch)")
+
+    # Validate page count with PyMuPDF
+    import fitz
+    try:
+        pdf_doc = fitz.open(stream=content, filetype="pdf")
+        page_count = pdf_doc.page_count
+        pdf_doc.close()
+    except Exception as e:
+        raise HTTPException(400, f"Corrupted or unreadable PDF document: {str(e)}")
+
+    if page_count > settings.MAX_PDF_PAGES:
+        raise HTTPException(
+            400,
+            f"Document exceeds maximum limit of {settings.MAX_PDF_PAGES} pages (uploaded document has {page_count} pages)"
+        )
 
     # Save file
     filename = f"{uuid.uuid4().hex}_{file.filename}"
@@ -65,7 +86,11 @@ async def upload_document(
     # Process document (in production, this would be a Celery task)
     try:
         result = await document_processor.process_pdf(
-            file_path, file.filename, doc_id=str(doc.id)
+            file_path,
+            file.filename,
+            doc_id=str(doc.id),
+            user_id=str(current_user.id),
+            category="user_upload",
         )
         doc.processing_status = "completed" if result["success"] else "failed"
         doc.chunks_count = result.get("chunks_count", 0)

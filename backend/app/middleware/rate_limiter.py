@@ -3,6 +3,7 @@ Rate Limiter Middleware — slowapi-based rate limiting.
 30 requests/minute per user (configurable via settings).
 """
 
+from typing import Optional
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -27,10 +28,41 @@ def get_user_identifier(request: Request) -> str:
     return get_remote_address(request)
 
 
+def _get_storage_uri() -> str:
+    """Determine rate limiter backend with graceful fallback to memory."""
+    redis_url = getattr(settings, "REDIS_URL", None)
+    if not redis_url or getattr(settings, "DEBUG", True):
+        return "memory://"
+    try:
+        import redis
+        client = redis.from_url(redis_url, socket_connect_timeout=1)
+        client.ping()
+        return redis_url
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(
+            f"[RateLimiter] Redis unavailable at {redis_url}: {e}. Falling back to memory storage."
+        )
+        return "memory://"
+
+
+def check_redis_connection() -> Optional[bool]:
+    """Test Redis connectivity for readiness probe. Returns None if Redis not used."""
+    redis_url = getattr(settings, "REDIS_URL", None)
+    if not redis_url:
+        return None
+    try:
+        import redis
+        client = redis.from_url(redis_url, socket_connect_timeout=1)
+        return bool(client.ping())
+    except Exception:
+        return False
+
+
 limiter = Limiter(
     key_func=get_user_identifier,
     default_limits=[f"{settings.RATE_LIMIT_PER_MINUTE}/minute"],
-    storage_uri=settings.REDIS_URL if not settings.DEBUG else "memory://",
+    storage_uri=_get_storage_uri(),
 )
 
 

@@ -102,28 +102,43 @@ class VectorStore:
             for id_, emb, meta, text in zip(ids, embeddings, metadatas, texts):
                 self._memory_docs.append((id_, emb, {**meta, "text": text}, text))
 
+    def _is_accessible(self, meta: dict, user_id: Optional[str]) -> bool:
+        """Check if a document is accessible to the current user."""
+        if not user_id:
+            return True
+        doc_user = meta.get("user_id")
+        if doc_user in (None, "", "system", "global"):
+            return True
+        return str(doc_user) == str(user_id)
+
     async def search(
         self,
         query: str,
         top_k: int = 10,
         filter_dict: dict = None,
+        user_id: Optional[str] = None,
     ) -> list[dict]:
-        """Search for similar documents."""
+        """Search for similar documents with per-user document isolation."""
         self._init_store()
 
         query_embedding = await embeddings_manager.embed_text(query)
+
+        # Retrieve a slightly larger candidate set to allow post-filtering
+        retrieve_limit = top_k * 3 if user_id else top_k
 
         if self.store_type == "chromadb" and self.chroma_collection:
             results = await asyncio.to_thread(
                 self.chroma_collection.query,
                 query_embeddings=[query_embedding],
-                n_results=top_k,
+                n_results=retrieve_limit,
                 where=filter_dict,
             )
             docs = []
             if results and results["documents"]:
                 for i, doc in enumerate(results["documents"][0]):
                     meta = results["metadatas"][0][i] if results["metadatas"] else {}
+                    if not self._is_accessible(meta, user_id):
+                        continue
                     distance = results["distances"][0][i] if results["distances"] else 0
                     docs.append({
                         "id": results["ids"][0][i],
@@ -131,17 +146,17 @@ class VectorStore:
                         "metadata": meta,
                         "score": 1 - distance,  # Convert distance to similarity
                     })
-            return docs
+            return docs[:top_k]
 
         elif self.store_type == "pinecone" and self.pinecone_index:
             results = await asyncio.to_thread(
                 self.pinecone_index.query,
                 vector=query_embedding,
-                top_k=top_k,
+                top_k=retrieve_limit,
                 include_metadata=True,
                 filter=filter_dict,
             )
-            return [
+            accessible = [
                 {
                     "id": match.id,
                     "text": match.metadata.get("text", ""),
@@ -149,7 +164,9 @@ class VectorStore:
                     "score": match.score,
                 }
                 for match in results.matches
+                if self._is_accessible(match.metadata, user_id)
             ]
+            return accessible[:top_k]
 
         else:
             # Memory store
@@ -159,6 +176,8 @@ class VectorStore:
             query_vec = np.array(query_embedding)
             scored = []
             for id_, emb, meta, text in self._memory_docs:
+                if not self._is_accessible(meta, user_id):
+                    continue
                 doc_vec = np.array(emb)
                 score = float(np.dot(query_vec, doc_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(doc_vec) + 1e-8))
                 scored.append({"id": id_, "text": text, "metadata": meta, "score": score})

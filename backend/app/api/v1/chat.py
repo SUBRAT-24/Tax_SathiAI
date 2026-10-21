@@ -65,7 +65,11 @@ async def chat_query(
     await db.flush()
 
     # Run RAG pipeline
-    result = await rag_pipeline.query(body.query, chat_history=history)
+    result = await rag_pipeline.query(
+        body.query,
+        chat_history=history,
+        user_id=str(current_user.id),
+    )
 
     # Save assistant response
     assistant_msg = ChatMessage(
@@ -136,7 +140,7 @@ async def chat_stream(websocket: WebSocket):
                     continue
 
                 # Stream the response
-                async for chunk in rag_pipeline.query_stream(query):
+                async for chunk in rag_pipeline.query_stream(query, user_id=str(user_id)):
                     await websocket.send_json(chunk)
 
             elif data.get("type") == "ping":

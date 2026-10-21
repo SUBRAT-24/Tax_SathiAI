@@ -18,21 +18,23 @@ class LLMHandler:
         self._init_clients()
 
     def _init_clients(self):
-        """Initialize available LLM clients."""
-        if settings.GEMINI_API_KEY:
+        """Initialize available LLM clients, ignoring placeholder keys."""
+        gemini_key = getattr(settings, "GEMINI_API_KEY", "") or ""
+        if gemini_key and not gemini_key.startswith("your-") and not gemini_key.startswith("placeholder"):
             try:
                 import google.generativeai as genai
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-3.6-flash') or 'gemini-3.6-flash'
+                genai.configure(api_key=gemini_key)
+                model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.0-flash') or 'gemini-2.0-flash'
                 self.gemini_client = genai.GenerativeModel(model_name)
                 print(f"[LLM] Gemini initialized with model: {model_name}")
             except Exception as e:
                 print(f"[LLM] Gemini init failed: {e}")
 
-        if settings.OPENAI_API_KEY:
+        openai_key = getattr(settings, "OPENAI_API_KEY", "") or ""
+        if openai_key and not openai_key.startswith("your-") and not openai_key.startswith("placeholder"):
             try:
                 from openai import AsyncOpenAI
-                self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+                self.openai_client = AsyncOpenAI(api_key=openai_key)
             except Exception as e:
                 print(f"[LLM] OpenAI init failed: {e}")
 
@@ -43,20 +45,45 @@ class LLMHandler:
         temperature: float = 0.3,
         max_tokens: int = 2048,
     ) -> str:
-        """Generate a response (non-streaming). Tries Gemini first, falls back to OpenAI."""
-        # Try Gemini
-        if self.gemini_client:
-            try:
-                return await self._gemini_generate(prompt, system_prompt, temperature, max_tokens)
-            except Exception as e:
-                print(f"[LLM] Gemini failed, trying fallback: {e}")
+        """Generate a response with timeouts and exponential backoff retry."""
+        timeout_sec = getattr(settings, "LLM_TIMEOUT_SECONDS", 30)
+        max_retries = getattr(settings, "LLM_MAX_RETRIES", 3)
 
-        # Try OpenAI
+        # Try Gemini with retry and timeout
+        if self.gemini_client:
+            for attempt in range(max_retries):
+                try:
+                    return await asyncio.wait_for(
+                        self._gemini_generate(prompt, system_prompt, temperature, max_tokens),
+                        timeout=timeout_sec,
+                    )
+                except asyncio.TimeoutError:
+                    print(f"[LLM] Gemini timeout after {timeout_sec}s (attempt {attempt+1}/{max_retries})")
+                except Exception as e:
+                    err_msg = str(e).lower()
+                    if ("429" in err_msg or "quota" in err_msg or "rate limit" in err_msg) and attempt < max_retries - 1:
+                        await asyncio.sleep(2 ** attempt)
+                        continue
+                    print(f"[LLM] Gemini failed (attempt {attempt+1}/{max_retries}): {e}")
+                    break
+
+        # Try OpenAI with retry and timeout
         if self.openai_client:
-            try:
-                return await self._openai_generate(prompt, system_prompt, temperature, max_tokens)
-            except Exception as e:
-                print(f"[LLM] OpenAI fallback also failed: {e}")
+            for attempt in range(max_retries):
+                try:
+                    return await asyncio.wait_for(
+                        self._openai_generate(prompt, system_prompt, temperature, max_tokens),
+                        timeout=timeout_sec,
+                    )
+                except asyncio.TimeoutError:
+                    print(f"[LLM] OpenAI timeout after {timeout_sec}s (attempt {attempt+1}/{max_retries})")
+                except Exception as e:
+                    err_msg = str(e).lower()
+                    if ("429" in err_msg or "rate limit" in err_msg) and attempt < max_retries - 1:
+                        await asyncio.sleep(2 ** attempt)
+                        continue
+                    print(f"[LLM] OpenAI fallback failed (attempt {attempt+1}/{max_retries}): {e}")
+                    break
 
         # Demo mode — return helpful response without API keys
         return self._demo_response(prompt)

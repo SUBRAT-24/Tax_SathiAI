@@ -25,12 +25,24 @@ class Base(DeclarativeBase):
     metadata = metadata
 
 
+# Engine configuration based on dialect
+engine_kwargs = {
+    "echo": settings.DB_ECHO,
+    "future": True,
+}
+
+if "sqlite" in settings.DATABASE_URL:
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+elif "postgresql" in settings.DATABASE_URL:
+    engine_kwargs.update({
+        "pool_size": getattr(settings, "DB_POOL_SIZE", 10),
+        "max_overflow": getattr(settings, "DB_MAX_OVERFLOW", 20),
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    })
+
 # Async engine
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DB_ECHO,
-    future=True,
-)
+engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
 
 # Async session factory
 async_session_factory = async_sessionmaker(
@@ -62,3 +74,14 @@ async def init_db():
 async def close_db():
     """Dispose of the engine."""
     await engine.dispose()
+
+
+async def check_db_connection() -> bool:
+    """Test database connectivity with SELECT 1 for readiness probe."""
+    try:
+        from sqlalchemy import text
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False

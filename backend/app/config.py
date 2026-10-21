@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./taxsathi.db"
     DB_ECHO: bool = False
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -93,8 +95,16 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 30
 
     # File Upload
-    MAX_UPLOAD_SIZE_MB: int = 50
+    MAX_UPLOAD_SIZE_MB: int = 10
+    MAX_PDF_PAGES: int = 20
     UPLOAD_DIR: str = "./data/uploads"
+
+    # LLM Resilience
+    LLM_TIMEOUT_SECONDS: int = 30
+    LLM_MAX_RETRIES: int = 3
+
+    # Observability
+    STRUCTURED_LOGGING: bool = True
 
     # CORS
     CORS_ORIGINS: list[str] = [

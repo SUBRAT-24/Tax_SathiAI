@@ -10,8 +10,10 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.database import init_db, close_db
-from app.middleware.rate_limiter import limiter, rate_limit_exceeded_handler
+from app.database import init_db, close_db, check_db_connection
+from app.middleware.rate_limiter import limiter, rate_limit_exceeded_handler, check_redis_connection
+from app.middleware.logging_middleware import StructuredLoggingMiddleware
+from app.core.vector_store import vector_store
 
 # Import routers
 from app.api.v1.auth import router as auth_router
@@ -60,6 +62,10 @@ app = FastAPI(
 )
 
 # ─── Middleware ──────────────────────────────────────
+
+# Logging
+if getattr(settings, "STRUCTURED_LOGGING", True):
+    app.add_middleware(StructuredLoggingMiddleware)
 
 # CORS
 app.add_middleware(
@@ -123,7 +129,45 @@ async def root():
 
 @app.get("/health", tags=["Health"])
 async def health_check():
+    """Liveness probe: returns 200 when application process is alive."""
     return {"status": "healthy", "app": settings.APP_NAME}
+
+
+@app.get("/ready", tags=["Health"])
+async def readiness_check():
+    """Readiness probe: validates DB, vector store, and Redis before serving traffic."""
+    checks = {}
+
+    # 1. Database
+    db_ok = await check_db_connection()
+    checks["database"] = "ok" if db_ok else "unreachable"
+
+    # 2. Vector Store
+    try:
+        vs_count = await vector_store.get_count()
+        checks["vector_store"] = f"ok ({vs_count} docs)"
+    except Exception as e:
+        checks["vector_store"] = f"error: {str(e)}"
+
+    # 3. Redis (if configured)
+    redis_status = check_redis_connection()
+    if redis_status is not None:
+        checks["redis"] = "ok" if redis_status else "unreachable"
+    else:
+        checks["redis"] = "in-memory"
+
+    is_ready = db_ok and ("error" not in checks.get("vector_store", ""))
+    status_code = 200 if is_ready else 503
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "ready" if is_ready else "not_ready",
+            "app": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "checks": checks,
+        },
+    )
 
 
 # Mount API v1 routers

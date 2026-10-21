@@ -168,6 +168,15 @@ class HybridSearch:
         if persist and self.index_path:
             self.bm25_index.save(self.index_path)
 
+    def _is_accessible(self, meta: dict, user_id: Optional[str]) -> bool:
+        """Check if document is accessible to current user."""
+        if not user_id:
+            return True
+        doc_user = meta.get("user_id")
+        if doc_user in (None, "", "system", "global"):
+            return True
+        return str(doc_user) == str(user_id)
+
     async def search(
         self,
         query: str,
@@ -175,18 +184,23 @@ class HybridSearch:
         top_k: int = 20,
         bm25_weight: float = 0.4,
         vector_weight: float = 0.6,
+        user_id: Optional[str] = None,
     ) -> list[dict]:
         """Hybrid search combining BM25 and vector results via Reciprocal Rank Fusion.
 
         Prefers newer and non-superseded sources:
           - Superseded sources receive a 0.35x penalty
           - Post-2024 amendments receive a 1.25x recency boost
+          - Restricts results to global statutory documents and current user's documents
         """
         bm25_results: list[dict] = []
         if self._indexed:
-            bm25_results = await asyncio.to_thread(
-                self.bm25_index.search, query, top_k * 2
+            raw_bm25 = await asyncio.to_thread(
+                self.bm25_index.search, query, top_k * 3
             )
+            bm25_results = [doc for doc in raw_bm25 if self._is_accessible(doc.get("metadata", {}), user_id)]
+
+        filtered_vector = [doc for doc in vector_results if self._is_accessible(doc.get("metadata", {}), user_id)]
 
         k = 60  # RRF constant
         fused: dict[str, dict] = {}
@@ -209,7 +223,7 @@ class HybridSearch:
                 fused[doc_id]["bm25_rank"] = rank + 1
 
         # 2. RRF scoring for Vector results
-        for rank, doc in enumerate(vector_results):
+        for rank, doc in enumerate(filtered_vector):
             doc_id = str(doc["id"])
             rrf_score = vector_weight * (1.0 / (k + rank + 1.0))
             if doc_id not in fused:
