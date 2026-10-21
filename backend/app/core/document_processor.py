@@ -62,6 +62,11 @@ class DocumentProcessor:
         # Add to vector store
         await vector_store.add_documents(texts=chunks, metadatas=metadatas, ids=ids)
 
+        # Index into BM25 keyword index and persist
+        from app.core.hybrid_search import hybrid_search
+        bm25_tuples = [(id_, chunk, meta) for id_, chunk, meta in zip(ids, chunks, metadatas)]
+        hybrid_search.index_documents(bm25_tuples, persist=True)
+
         return {
             "success": True,
             "chunks_count": len(chunks),

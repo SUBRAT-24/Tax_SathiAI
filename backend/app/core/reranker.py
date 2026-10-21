@@ -1,7 +1,9 @@
 """
 Cohere Reranker — re-ranks retrieved chunks for higher accuracy.
-Gracefully degrades to score-based sorting when API key is missing.
+Gracefully degrades to score-based ranking when API key is missing or calls fail.
 """
+
+from __future__ import annotations
 
 import asyncio
 from typing import Optional
@@ -9,7 +11,7 @@ from app.config import settings
 
 
 class Reranker:
-    """Cohere Rerank integration with graceful fallback."""
+    """Cohere Rerank integration with robust fallback."""
 
     def __init__(self):
         self.client = None
@@ -17,13 +19,13 @@ class Reranker:
 
     def _init_client(self):
         """Initialize Cohere client if API key is available."""
-        if settings.COHERE_API_KEY:
+        if getattr(settings, "COHERE_API_KEY", None):
             try:
                 import cohere
                 self.client = cohere.Client(settings.COHERE_API_KEY)
-                print("[Reranker] Cohere reranker initialized")
-            except ImportError:
-                print("[Reranker] cohere package not installed")
+                print("[Reranker] Cohere reranker client initialized")
+            except Exception as e:
+                print(f"[Reranker] Cohere initialization error: {e}")
 
     async def rerank(
         self,
@@ -31,9 +33,10 @@ class Reranker:
         documents: list[dict],
         top_k: int = 5,
     ) -> list[dict]:
-        """
-        Re-rank documents using Cohere Rerank API.
-        Falls back to existing score ordering if API unavailable.
+        """Re-rank documents using Cohere Rerank API.
+
+        Falls back gracefully to existing score ordering if the API is unavailable or fails.
+        Guarantees that every returned document has 'rerank_score'.
         """
         if not documents:
             return []
@@ -45,21 +48,33 @@ class Reranker:
                     self.client.rerank,
                     query=query,
                     documents=doc_texts,
-                    top_n=top_k,
+                    top_n=min(top_k, len(documents)),
                     model="rerank-english-v3.0",
                 )
                 reranked = []
                 for r in results.results:
                     doc = documents[r.index].copy()
-                    doc["rerank_score"] = r.relevance_score
+                    doc["rerank_score"] = float(r.relevance_score)
                     reranked.append(doc)
                 return reranked
             except Exception as e:
-                print(f"[Reranker] Cohere rerank failed: {e}")
+                print(f"[Reranker] Cohere rerank call failed: {e}. Falling back to hybrid score.")
 
-        # Fallback: return top-k by existing score
-        sorted_docs = sorted(documents, key=lambda x: x.get("score", 0), reverse=True)
-        return sorted_docs[:top_k]
+        # Graceful fallback: sort by existing score
+        sorted_docs = sorted(
+            documents,
+            key=lambda x: float(x.get("score", 0.0) or 0.0),
+            reverse=True,
+        )
+        fallback_results = []
+        for doc in sorted_docs[:top_k]:
+            d = doc.copy()
+            # If no rerank_score, adopt normalized existing score
+            if "rerank_score" not in d:
+                d["rerank_score"] = float(d.get("score", 0.0) or 0.0)
+            fallback_results.append(d)
+
+        return fallback_results
 
 
 # Singleton

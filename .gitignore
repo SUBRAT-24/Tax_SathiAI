@@ -27,8 +27,10 @@ frontend-web/.env
 *.db-shm
 *.sqlite3
 
-# ChromaDB data
+# ChromaDB & Index data
 chroma_data/
+data/
+backend/data/
 
 # Node
 node_modules/

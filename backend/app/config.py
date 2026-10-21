@@ -71,6 +71,10 @@ class Settings(BaseSettings):
 
     # Cohere Reranker
     COHERE_API_KEY: Optional[str] = None
+    RAG_REFUSAL_THRESHOLD: float = 0.25
+    RAG_RETRIEVE_TOP_K: int = 20
+    RAG_RERANK_TOP_K: int = 5
+    BM25_INDEX_PATH: str = "./data/bm25_index.json"
 
     # AWS S3
     AWS_ACCESS_KEY_ID: Optional[str] = None
