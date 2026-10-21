@@ -19,10 +19,11 @@ class Reranker:
 
     def _init_client(self):
         """Initialize Cohere client if API key is available."""
-        if getattr(settings, "COHERE_API_KEY", None):
+        api_key = getattr(settings, "COHERE_API_KEY", "") or ""
+        if api_key and not api_key.startswith("your-") and not api_key.startswith("placeholder"):
             try:
                 import cohere
-                self.client = cohere.Client(settings.COHERE_API_KEY)
+                self.client = cohere.Client(api_key)
                 print("[Reranker] Cohere reranker client initialized")
             except Exception as e:
                 print(f"[Reranker] Cohere initialization error: {e}")
