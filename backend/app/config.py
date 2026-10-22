@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Supabase
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+    SUPABASE_PROJECT_ID: Optional[str] = None
+
     # JWT
     JWT_SECRET_KEY: str = ""  # REQUIRED in production
     JWT_ALGORITHM: str = "HS256"

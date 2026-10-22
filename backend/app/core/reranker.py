@@ -72,7 +72,13 @@ class Reranker:
             d = doc.copy()
             # If no rerank_score, adopt normalized existing score
             if "rerank_score" not in d:
-                d["rerank_score"] = float(d.get("score", 0.0) or 0.0)
+                raw_score = float(d.get("score", 0.0) or 0.0)
+                # Reciprocal Rank Fusion (RRF) scores have a theoretical maximum of 1/(k+1) = 1/61 (~0.01639).
+                # Scale by 61.0 so that RRF matches map to a standard 0.0 to 1.0 confidence scale.
+                if 0.0 < raw_score <= 0.05:
+                    d["rerank_score"] = min(round(raw_score * 61.0, 3), 1.0)
+                else:
+                    d["rerank_score"] = min(round(raw_score, 3), 1.0)
             fallback_results.append(d)
 
         return fallback_results

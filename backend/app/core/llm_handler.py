@@ -177,10 +177,62 @@ class LLMHandler:
                 yield chunk.choices[0].delta.content
 
     def _demo_response(self, prompt: str) -> str:
-        """Generate a helpful demo response when no API keys are configured."""
+        """Generate a helpful demo response when no API keys are configured or API quota is exceeded."""
         prompt_lower = prompt.lower()
+        if "user question:" in prompt_lower:
+            user_part = prompt_lower.split("user question:")[-1].split("\n")[0]
+        else:
+            user_part = prompt_lower
 
-        if "gst" in prompt_lower and "register" in prompt_lower:
+        if "itc" in user_part or "input tax credit" in user_part or "claim" in user_part and "credit" in user_part:
+            return (
+                "## Input Tax Credit (ITC) Rules\n\n"
+                "ITC can be claimed under **Section 16** of the CGST Act, 2017:\n\n"
+                "### Mandatory Conditions for Claiming ITC (Section 16(2)):\n"
+                "1. **Possession of Tax Invoice**: You must possess a tax invoice or debit note issued by a registered supplier.\n"
+                "2. **Receipt of Goods/Services**: You must have actually received the goods or services.\n"
+                "3. **Tax Paid to Government**: The tax charged in respect of such supply has been actually paid to the Government by the supplier (reflected in GSTR-2B).\n"
+                "4. **Furnishing Return**: You must have furnished the return under Section 39 (Form GSTR-3B).\n"
+                "5. **Time Limit**: ITC must be claimed before the 30th day of November following the end of the financial year, or furnishing of the annual return, whichever is earlier.\n\n"
+                "### Ineligible / Blocked ITC (Section 17(5)):\n"
+                "- Motor vehicles and conveyances (with specific exceptions for transportation/driving schools)\n"
+                "- Food, beverages, outdoor catering, beauty treatment, health services\n"
+                "- Membership of a club, health, and fitness centre\n"
+                "- Goods or services used for personal consumption or lost/stolen/written off\n\n"
+                "📋 *Statutory Citations: Section 16 & Section 17 of CGST Act, 2017; CGST Rules 36, 42, 43*\n\n"
+                "⚠️ *This is AI-generated statutory guidance, not legal advice. Please consult a qualified Chartered Accountant (CA).*"
+            )
+        elif "penalty" in user_part or "late fee" in user_part or "late filing" in user_part:
+            return (
+                "## Late Filing Fees & Penalties under GST\n\n"
+                "Under **Section 47** and **Section 50** of the CGST Act, 2017:\n\n"
+                "### 1. Late Fee for Form GSTR-3B & GSTR-1 (Section 47):\n"
+                "- **Nil Tax Liability**: ₹20 per day (₹10 CGST + ₹10 SGST), capped at ₹500 per return.\n"
+                "- **Normal / Tax Liability**: ₹50 per day (₹25 CGST + ₹25 SGST), capped based on turnover:\n"
+                "  - Turnover up to ₹1.5 Cr: Max ₹2,000\n"
+                "  - Turnover ₹1.5 Cr - ₹5 Cr: Max ₹5,000\n"
+                "  - Turnover above ₹5 Cr: Max ₹10,000\n\n"
+                "### 2. Interest on Delayed Payment (Section 50):\n"
+                "- **18% p.a.** on net tax liability paid after due date (Rule 88B).\n"
+                "- **24% p.a.** on wrongly availed and utilized ITC.\n\n"
+                "📋 *Statutory Citations: Sections 47 & 50 of CGST Act 2017; Notification No. 19/2021-Central Tax*\n\n"
+                "⚠️ *This is AI-generated statutory guidance, not legal advice. Please consult a qualified Chartered Accountant (CA).*"
+            )
+        elif "rate" in user_part or "product" in user_part or "hsn" in user_part:
+            return (
+                "## GST Rates & HSN Classification\n\n"
+                "Goods and services in India are classified under the HSN/SAC system with standard tax slabs:\n\n"
+                "### GST Tax Slabs:\n"
+                "- **0% (Exempt)**: Essential food items, fresh produce, milk, books, grains\n"
+                "- **5%**: Packaged food items, footwear below ₹1,000, coal, basic medicines, economy transport\n"
+                "- **12%**: Processed food, state-lotteries, computers, business class flights\n"
+                "- **18%**: Most industrial goods, capital goods, financial services, IT services, electronics\n"
+                "- **28% + Cess**: Luxury items, motor cars, aerated beverages, tobacco products\n\n"
+                "💡 *Use the HSN Search tool in the TaxSathi sidebar to look up the exact 4/6/8-digit HSN code and statutory rate for your specific commodity.*\n\n"
+                "📋 *Statutory Citations: Notification No. 1/2017-Central Tax (Rate), Chapter Customs Tariff Act 1975*\n\n"
+                "⚠️ *This is AI-generated guidance, not legal advice. Please verify with a qualified CA.*"
+            )
+        elif "register" in user_part or "registration" in user_part:
             return (
                 "## GST Registration Process\n\n"
                 "To register for GST in India, follow these steps:\n\n"
@@ -200,46 +252,22 @@ class LLMHandler:
                 "📋 *Source: CBIC Circular No. 128/47/2019-GST, Section 22 of CGST Act 2017*\n\n"
                 "⚠️ *This is AI-generated guidance, not legal advice. Please verify with a qualified CA.*"
             )
-        elif "itc" in prompt_lower or "input tax credit" in prompt_lower:
-            return (
-                "## Input Tax Credit (ITC) Rules\n\n"
-                "ITC can be claimed under Section 16 of CGST Act, 2017:\n\n"
-                "### Conditions for claiming ITC:\n"
-                "1. Must have a **tax invoice** or debit note from the supplier\n"
-                "2. Must have **received** the goods or services\n"
-                "3. **Tax must be paid** to the government by the supplier\n"
-                "4. Must have filed **GSTR-3B** return\n"
-                "5. Must claim within the **due date of September return** of the following year\n\n"
-                "### ITC NOT available on (Section 17(5)):\n"
-                "- Motor vehicles (except specific cases)\n"
-                "- Food, beverages, outdoor catering\n"
-                "- Beauty treatment, health services\n"
-                "- Club memberships\n"
-                "- Personal consumption goods\n\n"
-                "### ITC Reversal:\n"
-                "- **Rule 42**: Common credit for taxable + exempt supplies\n"
-                "- **Rule 43**: Capital goods used partly for business\n\n"
-                "📋 *Source: Section 16-21 of CGST Act, 2017; Rules 36-45 of CGST Rules*\n\n"
-                "⚠️ *This is AI-generated guidance, not legal advice. Please verify with a qualified CA.*"
-            )
         else:
             return (
-                "## GST Query Response\n\n"
-                "Thank you for your question about GST compliance. Here's what I can help with:\n\n"
-                "### Key GST Information:\n"
-                "- **GST Rates**: 0%, 5%, 12%, 18%, 28% (plus cess on some items)\n"
-                "- **Return Filing**: GSTR-1 (outward supplies), GSTR-3B (summary return)\n"
-                "- **Due Dates**: GSTR-1 by 11th, GSTR-3B by 20th of following month\n"
-                "- **Composition Scheme**: Available for businesses with turnover up to ₹1.5 Cr\n\n"
-                "### Common Topics I Can Help With:\n"
-                "- GST Registration process\n"
-                "- Input Tax Credit (ITC) rules\n"
-                "- Return filing procedures\n"
-                "- HSN/SAC code lookup\n"
-                "- Penalty calculations\n"
-                "- E-way bill requirements\n\n"
-                "Please ask a specific question and I'll provide detailed, cited guidance.\n\n"
-                "📋 *Source: CGST Act 2017, CBIC official notifications*\n\n"
+                "## GST Statutory Guidance\n\n"
+                "Thank you for your question regarding GST compliance. Here is key statutory guidance:\n\n"
+                "### Overview & Compliance:\n"
+                "- **GST Rates**: 0%, 5%, 12%, 18%, 28% (plus applicable compensation cess)\n"
+                "- **Return Filing**: GSTR-1 (outward supplies), GSTR-3B (monthly summary return)\n"
+                "- **Due Dates**: GSTR-1 by 11th, GSTR-3B by 20th of the following month\n"
+                "- **Composition Scheme**: Section 10 scheme for turnover up to ₹1.5 Crore\n\n"
+                "### Common Actions Available:\n"
+                "- **ITC Rules & Blocked Credit**: Ask about Section 16/17 conditions\n"
+                "- **Penalty Calculator**: Check Section 47 late fees and Section 50 interest\n"
+                "- **HSN/SAC Lookup**: Check product tax rate schedules\n"
+                "- **Registration Requirements**: Thresholds and Form GST REG-01\n\n"
+                "Please ask any specific question for detailed statutory and rule-based guidance.\n\n"
+                "📋 *Source: Central Goods and Services Tax Act 2017, CBIC Notifications*\n\n"
                 "⚠️ *This is AI-generated guidance, not legal advice. Please verify with a qualified CA.*"
             )
 

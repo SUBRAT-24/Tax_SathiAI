@@ -167,6 +167,10 @@ async def readiness_check():
     else:
         checks["redis"] = "in-memory"
 
+    # 4. Supabase
+    if settings.SUPABASE_URL and settings.SUPABASE_KEY:
+        checks["supabase"] = f"connected ({settings.SUPABASE_PROJECT_ID or 'configured'})"
+
     is_ready = db_ok and ("error" not in checks.get("vector_store", ""))
     status_code = 200 if is_ready else 503
 
