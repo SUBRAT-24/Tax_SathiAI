@@ -43,4 +43,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Production server execution (bind to $PORT dynamically for Render)
-CMD ["sh", "-c", "alembic upgrade head && python ../scripts/ingest.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
+CMD ["sh", "-c", "alembic upgrade head && (python ../scripts/ingest.py || true) && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
