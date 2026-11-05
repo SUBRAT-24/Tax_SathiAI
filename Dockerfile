@@ -30,15 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /root/.local /root/.local
 COPY backend/ backend/
 COPY scripts/ scripts/
-COPY data/ data/
 
 WORKDIR /app/backend
 
 # Ensure storage directories exist
 RUN mkdir -p data/uploads data/chromadb
-
-# Pre-seed statutory knowledge base
-RUN python ../scripts/ingest.py || true
 
 ENV PORT=8000
 EXPOSE 8000
@@ -47,4 +43,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Production server execution (bind to $PORT dynamically for Render)
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
+CMD ["sh", "-c", "alembic upgrade head && python ../scripts/ingest.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
