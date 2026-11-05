@@ -26,8 +26,8 @@ from app.config import settings
 from app.database import Base
 import app.models  # load all models into Base.metadata
 
-# Override URL with application settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Override URL with application settings (escape % for configparser interpolation)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 target_metadata = Base.metadata
 
@@ -78,11 +78,18 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
+    connect_args = {}
+    if "supabase" in settings.DATABASE_URL or "ssl" in settings.DATABASE_URL:
+        connect_args["ssl"] = "require"
+    if "pooler.supabase.com" in settings.DATABASE_URL:
+        connect_args["statement_cache_size"] = 0
 
+    section = config.get_section(config.config_ini_section, {})
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:

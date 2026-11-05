@@ -34,6 +34,14 @@ engine_kwargs = {
 if "sqlite" in settings.DATABASE_URL:
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 elif "postgresql" in settings.DATABASE_URL:
+    connect_args = {}
+    if "supabase" in settings.DATABASE_URL or "ssl" in settings.DATABASE_URL:
+        connect_args["ssl"] = "require"
+    if "pooler.supabase.com" in settings.DATABASE_URL:
+        connect_args["statement_cache_size"] = 0
+    if connect_args:
+        engine_kwargs["connect_args"] = connect_args
+
     engine_kwargs.update({
         "pool_size": getattr(settings, "DB_POOL_SIZE", 10),
         "max_overflow": getattr(settings, "DB_MAX_OVERFLOW", 20),

@@ -10,7 +10,7 @@ SECURITY:
 
 import sys
 from pydantic_settings import BaseSettings
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, field_validator
 from typing import Optional
 
 
@@ -118,6 +118,19 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "https://app.taxsathi.ai",
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v):
+        if isinstance(v, str):
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
 
     # Maintenance Mode
     MAINTENANCE_MODE: bool = False
