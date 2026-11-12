@@ -11,6 +11,7 @@ interface User {
   email: string;
   role: string;
   phone?: string;
+  pan?: string;
   gstin?: string;
   is_active: boolean;
   last_login?: string;

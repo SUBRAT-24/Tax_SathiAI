@@ -1,0 +1,135 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-sticky);
+}
+
+.logo {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.logoRupee {
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+
+.nav {
+  flex: 1;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
+  margin-bottom: 4px;
+}
+
+.navLink:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
+
+.navLink.active {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.main {
+  flex: 1;
+  margin-left: 260px;
+  padding: var(--space-3);
+}
+
+.mobileMenuButton {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--transition-page);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .mobileMenuButton {
+    display: flex;
+    position: fixed;
+    bottom: var(--space-2);
+    right: var(--space-2);
+    z-index: calc(var(--z-sticky) + 1);
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 19, 15, 0.5);
+    z-index: calc(var(--z-sticky) - 1);
+  }
+}
+
+.sidebarFooter {
+  padding: var(--space-2);
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--text-sm);
+  color: #dc2626;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.logoutButton:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.2);
+}
