@@ -19,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Tools from './pages/Tools';
 import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 
 // Admin pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -29,9 +30,8 @@ import ActivityTracker from './pages/admin/ActivityTracker';
 import SecurityPanel from './pages/admin/SecurityPanel';
 import AppSettings from './pages/admin/AppSettings';
 
-// Components
-import Navbar from './components/Shared/Navbar';
-import Sidebar from './components/Shared/Sidebar';
+// Layouts
+import { AppLayout, AdminLayout } from './components/layouts';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,43 +55,36 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 // Animated routes
 function AnimatedRoutes() {
   const location = useLocation();
-  const isAuthPage = ['/login', '/register', '/admin/login', '/'].includes(location.pathname);
-  const isAdminPage = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
-  const isAppPage = !isAuthPage && !isAdminPage;
 
   return (
-    <>
-      {isAppPage && <Navbar />}
-      {isAppPage && <Sidebar />}
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      <div className={isAppPage ? 'app-main' : ''} style={!isAppPage ? { flex: 1, width: '100%' } : {}}>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            {/* Public */}
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+        {/* Protected User Routes */}
+        <Route path="/chat" element={<ProtectedRoute><AppLayout><Chat /></AppLayout></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+        <Route path="/documents" element={<ProtectedRoute><AppLayout><Documents /></AppLayout></ProtectedRoute>} />
+        <Route path="/tools" element={<ProtectedRoute><AppLayout><Tools /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
 
-            {/* Protected User Routes */}
-            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-            <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-
-            {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-            <Route path="/admin/knowledge-base" element={<AdminRoute><KnowledgeBase /></AdminRoute>} />
-            <Route path="/admin/activity" element={<AdminRoute><ActivityTracker /></AdminRoute>} />
-            <Route path="/admin/security" element={<AdminRoute><SecurityPanel /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AppSettings /></AdminRoute>} />
-          </Routes>
-        </AnimatePresence>
-      </div>
-    </>
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/dashboard" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><AdminLayout><UserManagement /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/knowledge-base" element={<AdminRoute><AdminLayout><KnowledgeBase /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/activity" element={<AdminRoute><AdminLayout><ActivityTracker /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/security" element={<AdminRoute><AdminLayout><SecurityPanel /></AdminLayout></AdminRoute>} />
+        <Route path="/admin/settings" element={<AdminRoute><AdminLayout><AppSettings /></AdminLayout></AdminRoute>} />
+        
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 
@@ -100,21 +93,19 @@ function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <div className="app-layout">
-            <AnimatedRoutes />
-          </div>
+          <AnimatedRoutes />
           <Toaster
             position="top-right"
             toastOptions={{
               style: {
-                background: '#1e293b',
-                color: '#f1f5f9',
-                border: '1px solid rgba(148, 163, 184, 0.1)',
-                borderRadius: '10px',
-                fontSize: '0.9rem',
+                background: 'var(--surface)',
+                color: 'var(--ink)',
+                border: '1px solid var(--rule)',
+                borderRadius: 'var(--radius)',
+                fontSize: 'var(--text-sm)',
               },
-              success: { iconTheme: { primary: '#34d399', secondary: '#0f172a' } },
-              error: { iconTheme: { primary: '#f87171', secondary: '#0f172a' } },
+              success: { iconTheme: { primary: 'var(--accent)', secondary: 'var(--surface)' } },
+              error: { iconTheme: { primary: 'var(--danger)', secondary: 'var(--surface)' } },
             }}
           />
         </Router>

@@ -1,0 +1,38 @@
+.wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table thead {
+  border-bottom: 1px solid var(--rule);
+}
+
+.table th {
+  padding: var(--space-2);
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-2);
+  border-top: 1px solid var(--rule);
+}
+
+.table tbody tr:hover {
+  background: var(--rule);
+}
+
+.table th.numeric,
+.table td.numeric {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
