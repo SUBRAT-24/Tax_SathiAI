@@ -4,6 +4,7 @@ Handles text embedding for both queries and documents.
 """
 
 import asyncio
+import os
 from typing import Optional
 import numpy as np
 from app.config import settings
@@ -18,8 +19,13 @@ class EmbeddingsManager:
         self.dimension = settings.EMBEDDING_DIMENSION
 
     def _load_model(self):
-        """Lazy-load the sentence-transformer model."""
+        """Lazy-load the sentence-transformer model (skipped on constrained prod nodes)."""
         if self.model is None:
+            enable_local = os.getenv("ENABLE_LOCAL_EMBEDDINGS", "").lower() == "true"
+            if settings.ENVIRONMENT == "production" and not enable_local:
+                print("[Embeddings] Skipping heavy local PyTorch model in production; using BM25 + lightweight mode.")
+                self.model = "demo"
+                return
             try:
                 from sentence_transformers import SentenceTransformer
                 self.model = SentenceTransformer(self.model_name)

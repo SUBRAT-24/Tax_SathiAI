@@ -239,6 +239,8 @@ _HSN_SAMPLE: list[dict] = [
      "gst_rate": 18, "effective_from": "2017-07-01", "notification": "Notif. 11/2017-CT(R)"},
     {"hsn_code": "9983", "description": "Other professional, technical services",
      "gst_rate": 18, "effective_from": "2017-07-01", "notification": "Notif. 11/2017-CT(R)"},
+    {"hsn_code": "998314", "description": "IT and software design, development, and consulting services",
+     "gst_rate": 18, "effective_from": "2017-07-01", "notification": "Notif. 11/2017-CT(R)"},
     {"hsn_code": "9992", "description": "Education services",
      "gst_rate": 0, "effective_from": "2017-07-01", "notification": "Notif. 12/2017-CT(R), exempt"},
     {"hsn_code": "9993", "description": "Health and social care services",
@@ -258,7 +260,17 @@ def _load_hsn_data() -> list[dict]:
     """Load HSN/SAC data from the JSON master file, falling back to sample."""
     if os.path.isfile(_HSN_DATA_FILE):
         with open(_HSN_DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        existing_codes = {str(e.get("hsn_code", "")) for e in data}
+        if "998314" not in existing_codes:
+            data.append({
+                "hsn_code": "998314",
+                "description": "IT and software design, development, and consulting services",
+                "gst_rate": 18,
+                "effective_from": "2017-07-01",
+                "notification": "Notification No. 11/2017-Central Tax (Rate), Heading 9983",
+            })
+        return data
     return list(_HSN_SAMPLE)
 
 

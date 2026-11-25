@@ -155,11 +155,20 @@ class HybridSearch:
             self._load_persisted()
 
     def _load_persisted(self):
-        """Reload index from disk on startup if available."""
-        if self.index_path and self.bm25_index.load(self.index_path):
-            self._indexed = self.bm25_index.n_docs > 0
-            if self._indexed:
-                print(f"[HybridSearch] Loaded BM25 index with {self.bm25_index.n_docs} documents from {self.index_path}")
+        """Reload index from disk on startup if available, falling back to bundled seed index."""
+        candidates = []
+        if self.index_path:
+            candidates.append(self.index_path)
+        bundled_seed = str(Path(__file__).resolve().parent.parent / "seed" / "bm25_index.json")
+        if bundled_seed not in candidates:
+            candidates.append(bundled_seed)
+
+        for path in candidates:
+            if self.bm25_index.load(path):
+                self._indexed = self.bm25_index.n_docs > 0
+                if self._indexed:
+                    print(f"[HybridSearch] Loaded BM25 index with {self.bm25_index.n_docs} documents from {path}")
+                    return
 
     def index_documents(self, documents: list[tuple[str, str, dict]], persist: bool = True):
         """Index documents for BM25. docs: [(id, text, metadata), ...]."""

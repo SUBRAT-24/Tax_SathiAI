@@ -39,44 +39,13 @@ class QueryExpander:
         return False
 
     async def expand(self, query: str, num_variants: int = 2) -> list[str]:
-        """Generate query variants for improved retrieval recall.
-
-        Skips expansion for short or exact queries to prevent keyword drift.
-        """
+        """Generate query variants instantly using deterministic legal synonym expansion."""
         variants = [query]
 
         if self.should_skip_expansion(query):
             return variants
 
-        expand_prompt = (
-            "You are a query expansion assistant for Indian GST and tax compliance. "
-            "Given the user question below, generate {n} alternative search queries that "
-            "capture the exact same statutory intent using formal Indian tax legal terminology. "
-            "Include technical legal terms and Act/Rule references where relevant.\n\n"
-            "Return ONLY a valid JSON array of strings without markdown or explanation.\n\n"
-            f"Original query: {query}\n\n"
-            f"Generate {num_variants} alternative queries:"
-        )
-
-        try:
-            result = await llm_handler.generate(
-                expand_prompt.format(n=num_variants),
-                temperature=0.3,
-                max_tokens=200,
-                timeout=8,
-            )
-            # Strip code block wrappers if any
-            clean_result = result.strip()
-            if clean_result.startswith("```"):
-                clean_result = re.sub(r"^```(?:json)?\s*|\s*```$", "", clean_result, flags=re.MULTILINE).strip()
-
-            parsed = json.loads(clean_result)
-            if isinstance(parsed, list):
-                variants.extend([str(v).strip() for v in parsed[:num_variants] if str(v).strip()])
-        except Exception:
-            # Fallback: rule-based expansion
-            variants.extend(self._keyword_expand(query))
-
+        variants.extend(self._keyword_expand(query))
         return variants[:num_variants + 1]
 
     def _keyword_expand(self, query: str) -> list[str]:

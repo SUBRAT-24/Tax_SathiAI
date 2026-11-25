@@ -47,15 +47,15 @@ class LLMHandler:
         timeout: Optional[int] = None,
     ) -> str:
         """Generate a response with per-call timeouts and fast fallback to demo mode."""
-        timeout_sec = timeout or min(getattr(settings, "LLM_TIMEOUT_SECONDS", 20), 20)
-        max_retries = 2
+        timeout_sec = timeout or 15
+        max_retries = 1
 
         # Try Gemini with retry and timeout
         if self.gemini_client:
             for attempt in range(max_retries):
                 try:
                     return await asyncio.wait_for(
-                        self._gemini_generate(prompt, system_prompt, temperature, max_tokens),
+                        self._gemini_generate(prompt, system_prompt, temperature, max_tokens, timeout_sec),
                         timeout=timeout_sec,
                     )
                 except asyncio.TimeoutError:
@@ -124,13 +124,16 @@ class LLMHandler:
             yield word + " "
             await asyncio.sleep(0.05)
 
-    async def _gemini_generate(self, prompt: str, system_prompt: str, temperature: float, max_tokens: int) -> str:
+    async def _gemini_generate(
+        self, prompt: str, system_prompt: str, temperature: float, max_tokens: int, timeout_sec: int = 25
+    ) -> str:
         """Generate with Google Gemini."""
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         response = await asyncio.to_thread(
             self.gemini_client.generate_content,
             full_prompt,
             generation_config={"temperature": temperature, "max_output_tokens": max_tokens},
+            request_options={"timeout": timeout_sec},
         )
         return response.text
 
@@ -181,7 +184,42 @@ class LLMHandler:
                 yield chunk.choices[0].delta.content
 
     def _demo_response(self, prompt: str) -> str:
-        """Generate a helpful demo response when no API keys are configured or API quota is exceeded."""
+        """Generate a helpful response from deterministic tool output or statutory fallback."""
+        import re
+        tool_match = re.search(
+            r'\[Deterministic Statutory Tool Result — ([^\]]+)\]\s*(\{.*?\}|\[.*?\])\s*(?:\n---|\nCONVERSATION|\Z)',
+            prompt,
+            re.DOTALL,
+        )
+        if tool_match:
+            tool_name = tool_match.group(1).strip()
+            try:
+                tool_data = json.loads(tool_match.group(2).strip())
+                if tool_name == "hsn_search" and isinstance(tool_data, list) and tool_data:
+                    lines = ["## Statutory HSN / SAC Classification & GST Rate\n"]
+                    for item in tool_data[:5]:
+                        code = item.get("hsn_code", "")
+                        desc = item.get("description", "")
+                        rate = item.get("gst_rate", "")
+                        notif = item.get("notification", "CBIC Rate Schedule")
+                        lines.append(f"- **Code {code}** ({desc}): **{rate}% GST** — *{notif}*")
+                    lines.append("\n⚠️ *This is AI-generated tax guidance based on CBIC notifications, not legal advice. Please verify with a qualified CA.*")
+                    return "\n".join(lines)
+                if tool_name == "due_dates" and isinstance(tool_data, list):
+                    lines = ["## Statutory GST Return Due Dates\n"]
+                    for item in tool_data[:6]:
+                        lines.append(f"- **{item.get('return_type', '')}**: {item.get('due_date', '')} — {item.get('description', '')}")
+                    lines.append("\n⚠️ *This is AI-generated tax guidance based on CBIC notifications, not legal advice. Please verify with a qualified CA.*")
+                    return "\n".join(lines)
+                if isinstance(tool_data, dict):
+                    lines = [f"## Statutory Calculation Result ({tool_name.replace('_', ' ').title()})\n"]
+                    for k, v in tool_data.items():
+                        lines.append(f"- **{k.replace('_', ' ').title()}**: `{v}`")
+                    lines.append("\n⚠️ *This is AI-generated tax guidance based on CBIC notifications, not legal advice. Please verify with a qualified CA.*")
+                    return "\n".join(lines)
+            except Exception:
+                pass
+
         prompt_lower = prompt.lower()
         if "user question:" in prompt_lower:
             user_part = prompt_lower.split("user question:")[-1].split("\n")[0]
@@ -318,30 +356,30 @@ class LLMHandler:
         return "General GST"
 
     async def generate_suggestions(self, query: str, answer: str) -> list[str]:
-        """Generate 3 follow-up question suggestions based on context."""
-        suggestion_prompt = (
-            "Based on the following GST query and answer, generate exactly 3 "
-            "natural follow-up questions the user might ask. "
-            "Return as a JSON array of strings.\n\n"
-            f"Query: {query}\n"
-            f"Answer: {answer[:500]}\n\n"
-            "Respond with ONLY a JSON array, e.g.: [\"question1\", \"question2\", \"question3\"]"
-        )
-
-        if self.gemini_client or self.openai_client:
-            try:
-                result = await self.generate(suggestion_prompt, temperature=0.7, max_tokens=200, timeout=8)
-                suggestions = json.loads(result.strip())
-                if isinstance(suggestions, list) and len(suggestions) >= 3:
-                    return suggestions[:3]
-            except Exception:
-                pass
-
-        # Fallback suggestions
+        """Return fast contextual GST follow-up suggestions without extra LLM latency."""
+        q = query.lower()
+        if "itc" in q or "input tax credit" in q or "17(5)" in q:
+            return [
+                "How does Rule 42 ITC reversal work?",
+                "What documents are needed under Section 16(2) to claim ITC?",
+                "Is ITC allowed on commercial vehicles above 13 seats?",
+            ]
+        if "rate" in q or "sac" in q or "hsn" in q:
+            return [
+                "How to calculate CGST, SGST, and IGST on a ₹1,00,000 invoice?",
+                "What is the GST rate on construction services (SAC 9954)?",
+                "When does reverse charge mechanism (RCM) apply?",
+            ]
+        if "late fee" in q or "penalty" in q or "interest" in q or "due date" in q:
+            return [
+                "What is the late fee cap for nil GSTR-3B returns?",
+                "How is 18% interest calculated under Section 50?",
+                "What are the due dates for GSTR-1 under QRMP?",
+            ]
         return [
-            "What are the penalties for late GST filing?",
-            "How do I claim Input Tax Credit?",
-            "What is the GST rate for my product?",
+            "What is Input Tax Credit and when is it blocked under Section 17(5)?",
+            "What are the due dates for GSTR-1 and GSTR-3B filing?",
+            "What are the penalties and late fees for delayed GST filing?",
         ]
 
 

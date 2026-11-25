@@ -121,6 +121,11 @@ class VectorStore:
         """Search for similar documents with per-user document isolation."""
         self._init_store()
 
+        # Skip embedding computation if ChromaDB has zero documents
+        if self.store_type == "chromadb" and self.chroma_collection:
+            if await asyncio.to_thread(self.chroma_collection.count) == 0:
+                return []
+
         query_embedding = await embeddings_manager.embed_text(query)
 
         # Retrieve a slightly larger candidate set to allow post-filtering
