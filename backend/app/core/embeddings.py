@@ -30,7 +30,8 @@ class EmbeddingsManager:
 
     async def embed_text(self, text: str) -> list[float]:
         """Embed a single text string."""
-        self._load_model()
+        if self.model is None:
+            await asyncio.to_thread(self._load_model)
         if self.model == "demo":
             return self._demo_embedding(text)
         embedding = await asyncio.to_thread(self.model.encode, text, normalize_embeddings=True)
@@ -38,7 +39,8 @@ class EmbeddingsManager:
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Embed a batch of text strings."""
-        self._load_model()
+        if self.model is None:
+            await asyncio.to_thread(self._load_model)
         if self.model == "demo":
             return [self._demo_embedding(t) for t in texts]
         embeddings = await asyncio.to_thread(

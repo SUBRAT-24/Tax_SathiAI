@@ -36,15 +36,34 @@ async def lifespan(app: FastAPI):
     print("   [OK] Database initialized")
 
     # Create upload directories
+    import asyncio
     import os
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.CHROMADB_PERSIST_DIR, exist_ok=True)
     print("   [OK] Upload directories ready")
 
+    # Pre-warm vector store & embeddings model in background in dev so first query is fast
+    # (Skip eager PyTorch load in production to stay within Render's 512MB free-tier RAM during startup)
+    warmup_task = None
+    if settings.ENVIRONMENT != "production":
+        async def _warmup_rag():
+            try:
+                from app.core.embeddings import embeddings_manager
+                await asyncio.to_thread(vector_store._init_store)
+                await asyncio.to_thread(embeddings_manager._load_model)
+                print("   [OK] RAG vector store & embeddings pre-warmed")
+            except Exception as e:
+                print(f"   [WARN] RAG pre-warm failed: {e}")
+
+        warmup_task = asyncio.create_task(_warmup_rag())
+
     print(f"   [OK] {settings.APP_NAME} is ready!")
     print(f"   [DOCS] Docs: http://localhost:8000/docs")
 
     yield
+
+    if warmup_task is not None:
+        warmup_task.cancel()
 
     # Shutdown
     await close_db()

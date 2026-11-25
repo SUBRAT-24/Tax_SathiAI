@@ -63,6 +63,7 @@ class QueryExpander:
                 expand_prompt.format(n=num_variants),
                 temperature=0.3,
                 max_tokens=200,
+                timeout=8,
             )
             # Strip code block wrappers if any
             clean_result = result.strip()

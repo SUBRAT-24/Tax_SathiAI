@@ -44,10 +44,11 @@ class LLMHandler:
         system_prompt: str = "",
         temperature: float = 0.3,
         max_tokens: int = 2048,
+        timeout: Optional[int] = None,
     ) -> str:
-        """Generate a response with timeouts and exponential backoff retry."""
-        timeout_sec = getattr(settings, "LLM_TIMEOUT_SECONDS", 30)
-        max_retries = getattr(settings, "LLM_MAX_RETRIES", 3)
+        """Generate a response with per-call timeouts and fast fallback to demo mode."""
+        timeout_sec = timeout or min(getattr(settings, "LLM_TIMEOUT_SECONDS", 20), 20)
+        max_retries = 2
 
         # Try Gemini with retry and timeout
         if self.gemini_client:
@@ -59,10 +60,11 @@ class LLMHandler:
                     )
                 except asyncio.TimeoutError:
                     print(f"[LLM] Gemini timeout after {timeout_sec}s (attempt {attempt+1}/{max_retries})")
+                    break
                 except Exception as e:
                     err_msg = str(e).lower()
                     if ("429" in err_msg or "quota" in err_msg or "rate limit" in err_msg) and attempt < max_retries - 1:
-                        await asyncio.sleep(2 ** attempt)
+                        await asyncio.sleep(1)
                         continue
                     print(f"[LLM] Gemini failed (attempt {attempt+1}/{max_retries}): {e}")
                     break
@@ -77,15 +79,17 @@ class LLMHandler:
                     )
                 except asyncio.TimeoutError:
                     print(f"[LLM] OpenAI timeout after {timeout_sec}s (attempt {attempt+1}/{max_retries})")
+                    break
                 except Exception as e:
                     err_msg = str(e).lower()
                     if ("429" in err_msg or "rate limit" in err_msg) and attempt < max_retries - 1:
-                        await asyncio.sleep(2 ** attempt)
+                        await asyncio.sleep(1)
                         continue
                     print(f"[LLM] OpenAI fallback failed (attempt {attempt+1}/{max_retries}): {e}")
                     break
 
         # Demo mode — return helpful response without API keys
+        print("[LLM] Using demo response fallback")
         return self._demo_response(prompt)
 
     async def generate_stream(
@@ -326,7 +330,7 @@ class LLMHandler:
 
         if self.gemini_client or self.openai_client:
             try:
-                result = await self.generate(suggestion_prompt, temperature=0.7, max_tokens=200)
+                result = await self.generate(suggestion_prompt, temperature=0.7, max_tokens=200, timeout=8)
                 suggestions = json.loads(result.strip())
                 if isinstance(suggestions, list) and len(suggestions) >= 3:
                     return suggestions[:3]
