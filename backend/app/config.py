@@ -11,7 +11,7 @@ SECURITY:
 import sys
 from pydantic_settings import BaseSettings
 from pydantic import Field, model_validator, field_validator
-from typing import Optional
+from typing import Optional, Union
 
 
 # ── Known-insecure defaults that MUST be rejected in production ──────────
@@ -113,7 +113,7 @@ class Settings(BaseSettings):
     STRUCTURED_LOGGING: bool = True
 
     # CORS
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: Union[list[str], str] = [
         "http://localhost:5173",
         "http://localhost:3000",
         "https://app.taxsathi.ai",
@@ -123,6 +123,7 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_cors_origins(cls, v):
         if isinstance(v, str):
+            v = v.strip()
             if v.startswith("[") and v.endswith("]"):
                 import json
                 try:
