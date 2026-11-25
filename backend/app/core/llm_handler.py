@@ -24,7 +24,7 @@ class LLMHandler:
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=gemini_key)
-                model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.0-flash') or 'gemini-2.0-flash'
+                model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-3.6-flash') or 'gemini-3.6-flash'
                 self.gemini_client = genai.GenerativeModel(model_name)
                 print(f"[LLM] Gemini initialized with model: {model_name}")
             except Exception as e:

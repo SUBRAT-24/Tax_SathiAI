@@ -61,7 +61,7 @@ class Settings(BaseSettings):
 
     # LLM — Google Gemini (primary)
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
 
     # LLM — OpenAI (fallback)
     OPENAI_API_KEY: Optional[str] = None

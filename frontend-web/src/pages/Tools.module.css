@@ -1,7 +1,17 @@
 .tools {
   padding: var(--space-4);
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 0 auto;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
 .title {
@@ -9,28 +19,37 @@
   font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--ink);
-  margin: 0 0 var(--space-4) 0;
+  margin: 0 0 6px 0;
+}
+
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin-bottom: var(--space-3);
 }
 
 .tabs {
   display: flex;
-  gap: var(--space-1);
-  margin-bottom: var(--space-4);
+  gap: 6px;
+  margin-bottom: var(--space-3);
   border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 .tab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: 8px;
+  padding: 10px 14px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--muted);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
   transition: all var(--transition-fast);
 }
 
@@ -41,11 +60,18 @@
 .tabActive {
   color: var(--accent);
   border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.splitGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .card {
-  padding: var(--space-4);
-  max-width: 600px;
+  padding: var(--space-3);
 }
 
 .cardTitle {
@@ -53,71 +79,159 @@
   font-size: var(--text-lg);
   font-weight: 700;
   color: var(--ink);
-  margin: 0 0 var(--space-3) 0;
+  margin: 0 0 14px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 14px;
 }
 
-.result {
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--rule);
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.toggleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.resultBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .resultRow {
   display: flex;
   justify-content: space-between;
-  padding: var(--space-2) 0;
-  font-size: var(--text-base);
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--rule);
+  font-size: var(--text-sm);
   color: var(--ink);
+}
+
+.resultRow:last-child {
+  border-bottom: none;
 }
 
 .resultTotal {
   font-weight: 700;
-  font-size: var(--text-lg);
-  border-top: 1px solid var(--rule);
-  margin-top: var(--space-1);
-  padding-top: var(--space-2);
+  font-size: 1.15rem;
+  color: var(--accent);
+  border-top: 2px solid var(--rule);
+  border-bottom: none;
+  margin-top: 6px;
+  padding-top: 12px;
 }
 
-.dueDates {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.dateItem {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-2);
-  background: var(--rule);
+.placeholderBox {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  background: var(--surface-subtle);
+  border: 1px dashed var(--rule);
   border-radius: var(--radius);
 }
 
-.dateLabel {
+.stepRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-xs);
+}
+
+.stepRow:last-child {
+  border-bottom: none;
+}
+
+.stepSource {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.sourceNote {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--surface-subtle);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  white-space: pre-line;
+  margin-top: 10px;
+}
+
+.searchBar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.dueDatesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.dateCard {
+  background: var(--surface-subtle);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dateCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.dateReturn {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-sm);
   color: var(--ink);
 }
 
-.dateValue {
-  color: var(--muted);
+.dateDue {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .splitGrid,
+  .row2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
   .tools {
     padding: var(--space-2);
-  }
-
-  .tabs {
-    flex-wrap: wrap;
-  }
-
-  .card {
-    max-width: 100%;
   }
 }

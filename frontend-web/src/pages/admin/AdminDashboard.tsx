@@ -1,157 +1,287 @@
-/**
- * Admin Dashboard — Overview with stats, charts, activity feed.
- */
-
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useDispatch } from 'react-redux';
-import { adminLogout } from '../../store/authSlice';
-import { pageVariants, pageTransition, staggerContainer, staggerItem, fadeInUp, scaleTap } from '../../animations/variants';
-import { adminApi } from '../../utils/api';
 import {
-  Users, MessageSquare, FileText, Shield, TrendingUp,
-  LogOut, Database, Activity, BarChart3
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
+import {
+  Users,
+  MessageSquare,
+  FileText,
+  Shield,
+  TrendingUp,
+  Activity,
+  Database,
+  ArrowRight,
 } from 'lucide-react';
-
-function AdminStatCard({ icon: Icon, label, value, color, trend }: any) {
-  return (
-    <motion.div variants={staggerItem} whileHover={{ y: -4, boxShadow: `0 8px 30px ${color}20` }}
-      style={{
-        padding: 20, borderRadius: 14, background: 'var(--color-bg-glass)',
-        backdropFilter: 'blur(20px)', border: '1px solid var(--border-color)',
-      }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: 6 }}>{label}</p>
-          <p style={{ fontSize: '1.8rem', fontWeight: 800 }}>{value}</p>
-          {trend && <p style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginTop: 4 }}>↑ {trend}</p>}
-        </div>
-        <div style={{
-          width: 42, height: 42, borderRadius: 10, background: color + '15',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Icon size={20} color={color} />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-const adminNavItems = [
-  { path: '/admin/dashboard', icon: BarChart3, label: 'Dashboard' },
-  { path: '/admin/users', icon: Users, label: 'Users' },
-  { path: '/admin/knowledge-base', icon: Database, label: 'Knowledge Base' },
-];
+import { adminApi } from '../../utils/api';
+import { Card, Skeleton } from '../../components/ui';
+import { pageVariants } from '../../animations/variants';
+import styles from './Admin.module.css';
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState<any>(null);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const [queryAnalytics, setQueryAnalytics] = useState<any>(null);
+  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.get('/admin/analytics/overview').then(r => setOverview(r.data.data)).catch(() => {});
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [ovRes, qRes, topRes] = await Promise.all([
+          adminApi.get('/admin/analytics/overview'),
+          adminApi.get('/admin/analytics/queries', { params: { days: 30 } }),
+          adminApi.get('/admin/analytics/top-users', { params: { limit: 5 } }),
+        ]);
+        if (!active) return;
+        setOverview(ovRes.data?.data || {});
+        setQueryAnalytics(qRes.data?.data || {});
+        setTopUsers(topRes.data?.data || []);
+      } catch {
+        // Leave partial
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, []);
 
+  const statCards = [
+    {
+      label: 'Total Users',
+      value: overview?.total_users ?? 0,
+      sub: `${overview?.new_users_today ?? 0} joined today`,
+      icon: Users,
+      bg: 'var(--accent-soft)',
+      color: 'var(--accent)',
+    },
+    {
+      label: 'Daily Active Users',
+      value: overview?.dau ?? 0,
+      sub: `${overview?.active_users_30d ?? 0} in last 30d`,
+      icon: Activity,
+      bg: 'var(--info-soft)',
+      color: 'var(--info)',
+    },
+    {
+      label: 'Total Queries',
+      value: overview?.total_queries ?? 0,
+      icon: MessageSquare,
+      bg: 'var(--accent-soft)',
+      color: 'var(--accent)',
+    },
+    {
+      label: 'Avg Grounding',
+      value: `${Math.round((overview?.avg_confidence || 0) * 100)}%`,
+      icon: TrendingUp,
+      bg: 'var(--warn-soft)',
+      color: 'var(--warn)',
+    },
+    {
+      label: 'KB Documents',
+      value: overview?.total_kb_documents ?? 0,
+      icon: FileText,
+      bg: 'var(--info-soft)',
+      color: 'var(--info)',
+    },
+    {
+      label: 'Positive Feedback',
+      value: `${Math.round((overview?.feedback_positive_ratio || 0) * 100)}%`,
+      icon: Shield,
+      bg: 'var(--accent-soft)',
+      color: 'var(--accent)',
+    },
+  ];
+
+  const dailyVolume = queryAnalytics?.daily_volume || [];
+  const intentDist = queryAnalytics?.intent_distribution || [];
+
   return (
-    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
-      style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
-      {/* Admin Sidebar */}
-      <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-        style={{
-          width: 260, padding: '20px 12px', position: 'fixed', top: 0, bottom: 0,
-          background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(20px)',
-          borderRight: '1px solid var(--border-color)', zIndex: 250,
-          display: 'flex', flexDirection: 'column',
-        }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 32 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg, #dc2626, #f87171)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Shield size={20} color="white" />
-          </div>
-          <div>
-            <div style={{ fontSize: '1rem', fontWeight: 800 }}>Admin Panel</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>TaxSathi AI</div>
-          </div>
+    <motion.div
+      className={styles.page}
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      <div className={styles.header}>
+        <div>
+          <div className={styles.kicker}>Platform Telemetry</div>
+          <h1 className={styles.title}>Admin Overview</h1>
+          <p className={styles.subtitle}>
+            User engagement, RAG confidence metrics, and statutory knowledge base health.
+          </p>
         </div>
+      </div>
 
-        <nav style={{ flex: 1 }}>
-          {adminNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = window.location.pathname === item.path;
-            return (
-              <Link key={item.path} to={item.path} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                borderRadius: 10, marginBottom: 4, fontSize: '0.9rem', textDecoration: 'none',
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                background: isActive ? 'rgba(220,38,38,0.1)' : 'transparent',
-                borderLeft: isActive ? '3px solid #dc2626' : '3px solid transparent',
-              }}>
-                <Icon size={18} /> {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+      {/* KPI Grid */}
+      <div className={styles.statsGrid}>
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="card" style={{ height: 96 }} />)
+          : statCards.map((s) => {
+              const Icon = s.icon;
+              return (
+                <Card key={s.label} className={styles.statCard} shadow>
+                  <div>
+                    <div className={styles.statLabel}>{s.label}</div>
+                    <div className={styles.statValue}>{s.value}</div>
+                    {s.sub && <div className={styles.statSub}>{s.sub}</div>}
+                  </div>
+                  <div className={styles.statIcon} style={{ background: s.bg, color: s.color }}>
+                    <Icon size={19} />
+                  </div>
+                </Card>
+              );
+            })}
+      </div>
 
-        <button onClick={() => { dispatch(adminLogout()); navigate('/admin/login'); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-            borderRadius: 10, color: 'var(--color-error)', background: 'transparent',
-            fontSize: '0.9rem', width: '100%',
-          }}>
-          <LogOut size={18} /> Logout
-        </button>
-      </motion.aside>
+      {/* Charts */}
+      <div className={styles.grid2}>
+        <Card className={styles.card} shadow>
+          <h2 className={styles.cardTitle}>Daily Query Volume (30d)</h2>
+          {dailyVolume.length === 0 ? (
+            <p style={{ color: 'var(--muted)', fontSize: 'var(--text-sm)', padding: '24px 0' }}>
+              No query volume recorded in the last 30 days.
+            </p>
+          ) : (
+            <div style={{ width: '100%', height: 240 }}>
+              <ResponsiveContainer>
+                <AreaChart data={dailyVolume}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
+                  <XAxis dataKey="date" stroke="var(--muted)" fontSize={11} />
+                  <YAxis stroke="var(--muted)" fontSize={11} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 8,
+                      color: 'var(--ink)',
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="var(--accent)"
+                    fill="var(--accent-soft)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
 
-      {/* Main content */}
-      <div style={{ flex: 1, marginLeft: 260, padding: 32 }}>
-        <motion.h1 variants={fadeInUp} initial="hidden" animate="visible"
-          style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 32 }}>
-          <span style={{ color: 'var(--color-error)' }}>Admin</span> Dashboard
-        </motion.h1>
+        <Card className={styles.card} shadow>
+          <h2 className={styles.cardTitle}>Top Query Intents</h2>
+          {intentDist.length === 0 ? (
+            <p style={{ color: 'var(--muted)', fontSize: 'var(--text-sm)', padding: '24px 0' }}>
+              No intent tags recorded yet.
+            </p>
+          ) : (
+            <div style={{ width: '100%', height: 240 }}>
+              <ResponsiveContainer>
+                <BarChart data={intentDist.slice(0, 6)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
+                  <XAxis type="number" stroke="var(--muted)" fontSize={11} allowDecimals={false} />
+                  <YAxis type="category" dataKey="intent" stroke="var(--muted)" fontSize={11} width={110} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 8,
+                      color: 'var(--ink)',
+                    }}
+                  />
+                  <Bar dataKey="count" fill="var(--accent)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+      </div>
 
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
-          <AdminStatCard icon={Users} label="Total Users" value={overview?.total_users || 0} color="#6366f1" trend="+12 this week" />
-          <AdminStatCard icon={Activity} label="DAU" value={overview?.dau || 0} color="#22d3ee" />
-          <AdminStatCard icon={MessageSquare} label="Total Queries" value={overview?.total_queries || 0} color="#34d399" trend="+156 today" />
-          <AdminStatCard icon={TrendingUp} label="Avg Confidence" value={`${Math.round((overview?.avg_confidence || 0) * 100)}%`} color="#f97316" />
-          <AdminStatCard icon={FileText} label="KB Documents" value={overview?.total_kb_documents || 0} color="#8b5cf6" />
-          <AdminStatCard icon={Shield} label="Feedback Score" value={`${Math.round((overview?.feedback_positive_ratio || 0) * 100)}%`} color="#fbbf24" />
-        </motion.div>
+      {/* Top Active Users + Quick Shortcuts */}
+      <div className={styles.gridEqual}>
+        <Card className={styles.card} shadow>
+          <h2 className={styles.cardTitle}>
+            <span>Most Active Users</span>
+            <Link to="/admin/users" style={{ fontSize: 'var(--text-xs)' }}>
+              All Users →
+            </Link>
+          </h2>
+          {topUsers.length === 0 ? (
+            <p style={{ color: 'var(--muted)', fontSize: 'var(--text-sm)' }}>No activity logs yet.</p>
+          ) : (
+            topUsers.map((u, idx) => (
+              <div key={u.user_id || idx} className={styles.listRow}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{u.name}</div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>{u.email}</div>
+                </div>
+                <span className="tabular" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--accent)' }}>
+                  {u.activity_count} actions
+                </span>
+              </div>
+            ))
+          )}
+        </Card>
 
-        {/* Quick links */}
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible" transition={{ delay: 0.3 }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-          <Link to="/admin/users" style={{ textDecoration: 'none' }}>
-            <motion.div {...scaleTap} style={{
-              padding: 24, borderRadius: 14, background: 'rgba(99,102,241,0.05)',
-              border: '1px solid rgba(99,102,241,0.15)', cursor: 'pointer',
-            }}>
-              <Users size={24} color="var(--color-primary)" style={{ marginBottom: 12 }} />
-              <h3 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--color-text-primary)' }}>User Management</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                View, manage, ban/unban users, reset passwords, export CSV
-              </p>
-            </motion.div>
-          </Link>
-          <Link to="/admin/knowledge-base" style={{ textDecoration: 'none' }}>
-            <motion.div {...scaleTap} style={{
-              padding: 24, borderRadius: 14, background: 'rgba(34,211,238,0.05)',
-              border: '1px solid rgba(34,211,238,0.15)', cursor: 'pointer',
-            }}>
-              <Database size={24} color="var(--color-accent)" style={{ marginBottom: 12 }} />
-              <h3 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--color-text-primary)' }}>Knowledge Base</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                Upload CBIC documents, manage indexing, trigger re-indexing
-              </p>
-            </motion.div>
-          </Link>
-        </motion.div>
+        <Card className={styles.card} shadow>
+          <h2 className={styles.cardTitle}>Quick Administration</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Link to="/admin/users" className={styles.listRow} style={{ textDecoration: 'none', color: 'var(--ink)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Users size={18} color="var(--accent)" />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>User Management</div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
+                    Add users, ban/unban, reset passwords, export CSV
+                  </div>
+                </div>
+              </div>
+              <ArrowRight size={15} color="var(--muted)" />
+            </Link>
+
+            <Link to="/admin/knowledge-base" className={styles.listRow} style={{ textDecoration: 'none', color: 'var(--ink)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Database size={18} color="var(--accent)" />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>CBIC Knowledge Base</div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
+                    Upload statutory PDFs and re-index vector store
+                  </div>
+                </div>
+              </div>
+              <ArrowRight size={15} color="var(--muted)" />
+            </Link>
+
+            <Link to="/admin/security" className={styles.listRow} style={{ textDecoration: 'none', color: 'var(--ink)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Shield size={18} color="var(--danger)" />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Security &amp; Audit Console</div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
+                    Inspect failed logins, active sessions, and block IPs
+                  </div>
+                </div>
+              </div>
+              <ArrowRight size={15} color="var(--muted)" />
+            </Link>
+          </div>
+        </Card>
       </div>
     </motion.div>
   );

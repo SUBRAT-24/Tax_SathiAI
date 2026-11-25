@@ -1,61 +1,101 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ArrowRight, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Calculator, 
-  Sparkles, 
+import {
+  ArrowRight,
+  CheckCircle2,
+  ShieldCheck,
+  Calculator,
+  Sparkles,
   ChevronRight,
-  ExternalLink,
   BookOpen,
   CalendarCheck,
-  TrendingUp,
-  Award
+  FileSearch,
+  Scale,
+  Clock,
+  Sun,
+  Moon,
+  Percent,
 } from 'lucide-react';
 import { pageVariants } from '../animations/variants';
+import { useTheme } from '../utils/theme';
 import styles from './Landing.module.css';
 
-// Interactive demo queries
 const DEMO_QUERIES = [
   {
     id: 1,
     title: 'Can I claim ITC on corporate health insurance for employees?',
     category: 'Input Tax Credit',
-    verdict: '⚠️ Conditional ITC Eligibility',
-    explanation: 'Under Section 17(5)(b)(i), ITC on health insurance is blocked unless it is obligatory for the employer under statutory factory laws or government notifications during emergencies.',
-    citations: ['CGST Act, Sec 17(5)(b)', 'Rule 42', 'Circular 140/10/2020'],
-    score: '99.8% Match'
+    verdict: 'Conditional ITC Eligibility',
+    ok: false,
+    explanation:
+      'Under Section 17(5)(b)(i) of the CGST Act, ITC on health insurance is blocked unless it is obligatory for an employer to provide it to employees under any law for the time being in force.',
+    citations: ['CGST Act, Sec 17(5)(b)', 'CGST Rule 42', 'Circular 140/10/2020'],
   },
   {
     id: 2,
     title: 'What is the statutory late fee for delayed GSTR-3B with nil tax?',
     category: 'Late Fees & Interest',
-    verdict: '✓ Capped at ₹20/day (₹10 CGST + ₹10 SGST)',
-    explanation: 'Pursuant to Notification No. 19/2021-Central Tax, late fee for nil returns is capped at ₹500 total (₹250 CGST + ₹250 SGST) calculated at ₹20 per day of delay.',
-    citations: ['CGST Act, Sec 47', 'Notification 19/2021-CT'],
-    score: '99.5% Match'
+    verdict: 'Capped at ₹20/day (₹10 CGST + ₹10 SGST), max ₹500',
+    ok: true,
+    explanation:
+      'Pursuant to Notification No. 19/2021-Central Tax, late fee for nil GSTR-3B returns is ₹20 per day of delay and capped at ₹500 total (₹250 CGST + ₹250 SGST).',
+    citations: ['CGST Act, Sec 47', 'Notif. 19/2021-CT'],
   },
   {
     id: 3,
-    title: 'Does export of software services require LUT or refund under IGST?',
-    category: 'Zero Rated Supply',
-    verdict: '✓ Zero-Rated under Letter of Undertaking (LUT)',
-    explanation: 'Exports constitute zero-rated supplies under Section 16 of the IGST Act. Suppliers can export without payment of IGST under a valid LUT filed on the GST portal.',
+    title: 'Does export of software services require LUT or payment of IGST?',
+    category: 'Zero-Rated Supply',
+    verdict: 'Zero-Rated under Letter of Undertaking (LUT)',
+    ok: true,
+    explanation:
+      'Exports of services constitute zero-rated supplies under Section 16 of the IGST Act. Suppliers can export without payment of IGST under a valid LUT (Form GST RFD-11) filed on the GST portal.',
     citations: ['IGST Act, Sec 16', 'CGST Rules, Rule 96A', 'Circular 125/44/2019'],
-    score: '99.2% Match'
-  }
+  },
+];
+
+const TOOLS_SHOWCASE = [
+  {
+    icon: Calculator,
+    title: 'Date-Aware GST Calculator',
+    desc: 'Supports CGST+SGST, IGST, Tax-Inclusive reverse math, Compensation Cess, and 56th GST Council slab changes.',
+  },
+  {
+    icon: Scale,
+    title: 'Rule 42 ITC Apportionment',
+    desc: 'Step-by-step T1/T2/T3/T4 & D1/D2 reversal ledger with Section 17(5) blocked credit guidance.',
+  },
+  {
+    icon: FileSearch,
+    title: 'HSN & SAC Master Lookup',
+    desc: 'Search 11,000+ goods and service codes with effective date filtering and CBIC notification tags.',
+  },
+  {
+    icon: Clock,
+    title: 'Sec 47 Late Fee & Sec 50 Interest',
+    desc: 'Exact turnover-band caps for GSTR-3B, GSTR-1, and GSTR-9 plus 18% p.a. interest computation.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Mod-36 GSTIN Validator',
+    desc: 'ISO 7064 Mod 37,36 checksum verification extracting State, PAN, Entity Type, and Check Digit.',
+  },
+  {
+    icon: CalendarCheck,
+    title: 'Statutory Due Date Calendar',
+    desc: 'Monthly, QRMP quarterly, ISD, TDS/TCS, and annual return deadlines anchored to CGST Rules.',
+  },
 ];
 
 export default function Landing() {
   const navigate = useNavigate();
   const [selectedQuery, setSelectedQuery] = useState(DEMO_QUERIES[0]);
+  const { theme, toggleTheme } = useTheme();
   const isAuth = !!localStorage.getItem('access_token');
 
   const handleAction = (path: string) => {
-    if (isAuth && path === '/login') {
-      navigate('/dashboard');
+    if (isAuth && (path === '/login' || path === '/register')) {
+      navigate('/chat');
     } else {
       navigate(path);
     }
@@ -69,267 +109,231 @@ export default function Landing() {
       animate="animate"
       exit="exit"
     >
-      {/* ─── 1. Floating Capsule / Pill Navbar ───────────────────────────── */}
-      <header className={styles.navContainer}>
-        <Link to="/" className={styles.brand}>
-          <div className={styles.brandIcon}>₹</div>
-          <div className={styles.brandName}>
-            TaxSathi<span className={styles.brandSuffix}>AI</span>
+      {/* ─── 1. Floating Pill Navbar ──────────────────────────────── */}
+      <header className={styles.navWrap}>
+        <div className={styles.navBar}>
+          <Link to="/" className={styles.brand}>
+            <div className={styles.brandIcon}>₹</div>
+            <div className={styles.brandName}>
+              TaxSathi <span className={styles.brandBadge}>AI</span>
+            </div>
+          </Link>
+
+          <nav className={styles.navLinks} aria-label="Landing sections">
+            <a href="#features" className={styles.navLink}>Capabilities</a>
+            <a href="#playground" className={styles.navLink}>Live Demo</a>
+            <a href="#tools" className={styles.navLink}>GST Tools</a>
+            <a href="#statutory" className={styles.navLink}>Sources</a>
+            <a href="#pricing" className={styles.navLink}>Plans</a>
+          </nav>
+
+          <div className={styles.navActions}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={styles.iconBtn}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              title="Toggle theme"
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAction(isAuth ? '/dashboard' : '/login')}
+              className={styles.loginBtn}
+            >
+              {isAuth ? 'Dashboard' : 'Log in'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAction(isAuth ? '/chat' : '/register')}
+              className={styles.primaryPill}
+            >
+              <span>{isAuth ? 'Open Workspace' : 'Start Free'}</span>
+              <ArrowRight size={15} />
+            </button>
           </div>
-        </Link>
-
-        {/* Center Floating Capsule Pill */}
-        <nav className={styles.navCapsule}>
-          <a href="#features" className={styles.capsuleLink}>Features</a>
-          <a href="#playground" className={styles.capsuleLink}>Live Demo</a>
-          <a href="#tools" className={styles.capsuleLink}>Calculators</a>
-          <a href="#statutory" className={styles.capsuleLink}>Statutory Sources</a>
-          <a href="#pricing" className={styles.capsuleLink}>Pricing</a>
-        </nav>
-
-        {/* Right Action Buttons */}
-        <div className={styles.navActions}>
-          <button onClick={() => handleAction('/login')} className={styles.loginLink}>
-            {isAuth ? 'Dashboard' : 'Log in'}
-          </button>
-          <button 
-            onClick={() => handleAction(isAuth ? '/chat' : '/register')} 
-            className={styles.pillButtonPrimary}
-          >
-            <span>Start Free Trial</span>
-            <ArrowRight size={15} />
-          </button>
         </div>
       </header>
 
-      {/* ─── 2. Signature Hero Card (Outcrowd Wollo Style) ─────────────── */}
-      <section className={styles.heroCardWrapper}>
+      {/* ─── 2. Signature Hero Ledger Card ───────────────────────── */}
+      <section className={styles.heroWrapper}>
         <div className={styles.heroCard}>
-          <div className={styles.heroGlow} />
-          <div className={styles.heroGlowBottom} />
+          <div className={styles.heroGridLines} />
 
-          {/* Left Column: Headline, Description, CTAs */}
           <div className={styles.heroContent}>
-            <div className={styles.badgePill}>
+            <div className={styles.kickerPill}>
               <span className={styles.pulseDot} />
-              <span>India's 1st Grounded Statutory Tax AI</span>
+              <span>Grounded in CBIC Acts, Rules &amp; Circulars</span>
             </div>
 
             <h1 className={styles.heroTitle}>
-              Reach Compliance with Precision.{' '}
-              <span className={styles.heroTitleGradient}>Verify GST in Seconds.</span>
+              Statutory GST Intelligence,{' '}
+              <span className={styles.heroTitleEm}>Cited to the Section.</span>
             </h1>
 
             <p className={styles.heroDescription}>
-              Instant, legally grounded answers from official CBIC Acts, CGST Rules 2017 & GST Council circulars. 
-              Zero hallucinations with exact section citations and deterministic statutory tools.
+              Ask complex GST questions backed by hybrid RAG retrieval over official CGST/IGST statutes,
+              or run deterministic Rule 42 ITC, HSN lookup, and Section 47 penalty calculations in seconds.
             </p>
 
             <div className={styles.heroActions}>
-              <button 
-                onClick={() => handleAction(isAuth ? '/chat' : '/register')} 
-                className={styles.ctaButtonWhite}
+              <button
+                type="button"
+                onClick={() => handleAction(isAuth ? '/chat' : '/register')}
+                className={styles.ctaWhite}
               >
-                <span>Start Free Trial</span>
+                <span>{isAuth ? 'Launch AI Assistant' : 'Create Free Account'}</span>
                 <ArrowRight size={17} />
               </button>
-
-              <a href="#playground" className={styles.ctaButtonGhost}>
-                <span>Explore Live Demo</span>
+              <a href="#playground" className={styles.ctaGhost}>
+                <span>Inspect Live Analysis</span>
               </a>
             </div>
 
-            {/* Bottom Trust Row */}
-            <div className={styles.heroTrust}>
-              <div className={trustStatStyle()}>
-                <span className={styles.trustValue}>99.4%</span>
-                <span className={styles.trustLabel}>Statutory Accuracy</span>
+            <div className={styles.heroMetrics}>
+              <div className={styles.metricItem}>
+                <span className={styles.metricVal}>Hybrid RAG</span>
+                <span className={styles.metricLbl}>BM25 + Semantic Rerank</span>
               </div>
-              <div className={styles.trustDivider} />
-              <div className={trustStatStyle()}>
-                <span className={styles.trustValue}>11,000+</span>
-                <span className={styles.trustLabel}>HSN / SAC Master</span>
+              <div className={styles.metricItem}>
+                <span className={styles.metricVal}>11,000+</span>
+                <span className={styles.metricLbl}>HSN / SAC Master</span>
               </div>
-              <div className={styles.trustDivider} />
-              <div className={trustStatStyle()}>
-                <span className={styles.trustValue}>Zero</span>
-                <span className={styles.trustLabel}>Hallucination Rate</span>
+              <div className={styles.metricItem}>
+                <span className={styles.metricVal}>6 Engines</span>
+                <span className={styles.metricLbl}>Deterministic Tax Tools</span>
               </div>
             </div>
           </div>
 
-          {/* Right Column: 3D Layered Cards Showcase */}
           <div className={styles.heroVisual}>
-            {/* Main Interactive Floating Card */}
-            <div className={styles.floatingCardMain}>
-              <div className={styles.cardTopRow}>
-                <div className={styles.statusVerifiedPill}>
-                  <ShieldCheck size={14} />
-                  <span>Statutory Grounded</span>
-                </div>
-                <span className={styles.cardCategory}>Section 17(5) Evaluation</span>
+            <div className={styles.ledgerPreview}>
+              <div className={styles.previewTop}>
+                <span className={styles.verifiedPill}>
+                  <ShieldCheck size={14} /> Statutory Grounded
+                </span>
+                <span className={styles.previewTag}>Sec 17(5)(a) Check</span>
               </div>
-
-              <div className={styles.cardQueryText}>
-                "Can our company claim ITC on commercial vehicle purchases above 13 seater capacity?"
+              <div className={styles.previewQuery}>
+                &ldquo;Can our company claim ITC on commercial passenger vehicles above 13-person seating?&rdquo;
               </div>
-
-              <div className={styles.cardAnswerBox}>
-                <div className={styles.answerHighlight}>
-                  <CheckCircle2 size={14} color="#16a34a" />
-                  <span style={{ color: '#15803d' }}>ITC Available & Allowed</span>
+              <div className={styles.previewAnswer}>
+                <div className={styles.previewVerdict}>
+                  <CheckCircle2 size={15} /> ITC Eligible &amp; Allowed
                 </div>
-                <p className={styles.answerText}>
-                  Section 17(5)(a) restricts ITC only on motor vehicles with seating capacity up to 13 persons. Vehicles with seating capacity &gt; 13 are fully eligible for input tax credit.
+                <p className={styles.previewBody}>
+                  Section 17(5)(a) blocks ITC only on motor vehicles for transportation of persons having approved
+                  seating capacity of not more than 13 persons (including driver).
                 </p>
                 <div className={styles.citationRow}>
-                  <span className={styles.citationBadge}>CGST Act, Sec 17(5)(a)</span>
-                  <span className={styles.citationBadge}>CBIC Notification 2018</span>
-                  <span className={styles.citationBadge}>Rule 42 Validated</span>
+                  <span className={styles.citationTag}>CGST Act § 17(5)(a)</span>
+                  <span className={styles.citationTag}>Rule 42 Apportionment</span>
                 </div>
               </div>
             </div>
 
-            {/* Sub Floating Mini Cards Grid */}
-            <div className={styles.subCardsGrid}>
-              <div className={styles.floatingMiniCard}>
-                <div className={styles.miniCardHeader}>
-                  <div className={styles.miniCardIcon} style={{ background: '#ecfdf5', color: '#059669' }}>
-                    <ShieldCheck size={16} />
-                  </div>
-                  <span className={styles.miniCardTitle}>GSTIN Checksum</span>
+            <div className={styles.miniCards}>
+              <div className={styles.miniCard}>
+                <div className={styles.miniHeader}>
+                  <ShieldCheck size={15} color="var(--accent)" />
+                  <span>GSTIN Mod-36</span>
                 </div>
-                <span className={styles.miniCardValue}>27AAAPL1234C1ZV • Valid</span>
+                <code className={styles.miniValue}>27AAAPL1234C1ZV • Valid</code>
               </div>
-
-              <div className={styles.floatingMiniCard}>
-                <div className={styles.miniCardHeader}>
-                  <div className={styles.miniCardIcon} style={{ background: '#ede9fe', color: '#7c3aed' }}>
-                    <Calculator size={16} />
-                  </div>
-                  <span className={styles.miniCardTitle}>Late Fee (Sec 47)</span>
+              <div className={styles.miniCard}>
+                <div className={styles.miniHeader}>
+                  <Percent size={15} color="var(--warn)" />
+                  <span>Late Fee (Sec 47)</span>
                 </div>
-                <span className={styles.miniCardValue}>₹50/day + 18% Int</span>
+                <code className={styles.miniValue}>₹50/day + 18% p.a. Int</code>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── 3. Sub-Hero Horizontal Strip (Video Spec) ──────────────────── */}
-      <div className={styles.subHeroStrip}>
-        <div className={styles.subHeroNav}>
-          <a href="#features" className={styles.stripLink}>Features</a>
-          <a href="#playground" className={styles.stripLink}>Live Demo</a>
-          <a href="#tools" className={styles.stripLink}>Calculators</a>
-          <a href="#statutory" className={styles.stripLink}>Official Gazettes</a>
-          <a href="#pricing" className={styles.stripLink}>Pricing</a>
+      {/* ─── 3. Core Capabilities ────────────────────────────────── */}
+      <section id="features" className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionKicker}>Built for CAs, Tax Teams &amp; Founders</div>
+          <h2 className={styles.sectionTitle}>Every Answer Traceable. Every Calculation Exact.</h2>
+          <p className={styles.sectionSubtitle}>
+            Designed like a modern accountant&apos;s ledger—combining citation-verified statutory AI
+            with deterministic calculators that never hallucinate tax math.
+          </p>
         </div>
 
-        <div className={styles.socialIcons}>
-          <a href="https://twitter.com" target="_blank" rel="noreferrer" className={styles.socialIconBtn} title="Twitter / X">
-            <TrendingUp size={16} />
-          </a>
-          <a href="https://github.com/SUBRAT-24/Tax_SathiAI" target="_blank" rel="noreferrer" className={styles.socialIconBtn} title="GitHub Repository">
-            <ExternalLink size={16} />
-          </a>
-          <a href="https://linkedin.com" target="_blank" rel="noreferrer" className={styles.socialIconBtn} title="LinkedIn">
-            <Award size={16} />
-          </a>
-        </div>
-      </div>
-
-      {/* ─── 4. Secondary Section: Display Header + Dual CTAs ──────────── */}
-      <section id="features" className={styles.secondarySection}>
-        <div className={styles.sectionKicker}>Built For Modern Indian Businesses & CAs</div>
-        <h2 className={styles.secondaryTitle}>
-          Maximize Your Tax Compliance & Cut Audit Penalties
-        </h2>
-        <p className={styles.secondarySubtitle}>
-          Replace guesswork with deterministic statutory intelligence. Back every return, credit claim, and rate classification with official CBIC citations.
-        </p>
-
-        <div className={styles.secondaryButtons}>
-          <button onClick={() => handleAction(isAuth ? '/chat' : '/register')} className={styles.pillPrimaryBtn}>
-            <span>Start Free Trial</span>
-            <ArrowRight size={16} />
-          </button>
-          <button onClick={() => handleAction('/tools')} className={styles.pillGhostBtn}>
-            <span>Explore GST Calculators</span>
-          </button>
-        </div>
-
-        {/* 3D Colored Feature Cards Grid */}
-        <div className={styles.featuresCardsGrid}>
-          {/* Card 1: Grounded RAG */}
-          <div className={styles.featureCardItem}>
-            <div className={styles.featureCardIconWrapper} style={{ background: '#ede9fe', color: '#6366f1' }}>
-              <BookOpen size={28} />
+        <div className={styles.grid3}>
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <BookOpen size={22} />
             </div>
-            <h3 className={styles.featureCardTitle}>Grounded Statutory RAG</h3>
-            <p className={styles.featureCardDescription}>
-              Proprietary hybrid search combining semantic vector embeddings with BM25 keyword matching across the complete CGST Act, IGST Act, and CBIC notifications.
+            <h3 className={styles.featureTitle}>Grounded Statutory RAG</h3>
+            <p className={styles.featureDesc}>
+              Hybrid retrieval combines dense semantic embeddings, BM25 lexical matching, and cross-encoder reranking across CBIC documents.
             </p>
-            <ul className={styles.featureCardFooterList}>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Zero hallucinations guaranteed</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Section & rule level citations</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Multi-turn conversational memory</li>
+            <ul className={styles.featureList}>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Page &amp; source preview citations</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Confidence score &amp; intent tagging</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Persistent sessions &amp; bookmarks</li>
             </ul>
           </div>
 
-          {/* Card 2: Deterministic Calculators */}
-          <div className={styles.featureCardItem}>
-            <div className={styles.featureCardIconWrapper} style={{ background: '#ecfdf5', color: '#10b981' }}>
-              <Calculator size={28} />
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <Calculator size={22} />
             </div>
-            <h3 className={styles.featureCardTitle}>Deterministic Calculators</h3>
-            <p className={styles.featureCardDescription}>
-              Never calculate GST penalties manually again. Date-aware statutory calculation logic with automatic CGST, SGST, and IGST breakdowns.
+            <h3 className={styles.featureTitle}>Deterministic Tax Engines</h3>
+            <p className={styles.featureDesc}>
+              Zero LLM guesswork for numbers. Exact Decimal arithmetic for CGST/SGST/IGST splits, Rule 42 ITC reversals, and Section 47 caps.
             </p>
-            <ul className={styles.featureCardFooterList}>
-              <li><CheckCircle2 size={16} color="#10b981" /> Section 47 tiered late fee engine</li>
-              <li><CheckCircle2 size={16} color="#10b981" /> 18% p.a. Section 50 interest logic</li>
-              <li><CheckCircle2 size={16} color="#10b981" /> Rule 42 & 43 reversal computation</li>
+            <ul className={styles.featureList}>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> 56th GST Council slab date awareness</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Full 12-step Rule 42 ITC breakdown</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Turnover-tiered GSTR-1/3B/9 late fees</li>
             </ul>
           </div>
 
-          {/* Card 3: GSTIN & Due Dates */}
-          <div className={styles.featureCardItem}>
-            <div className={styles.featureCardIconWrapper} style={{ background: '#fffbeb', color: '#f59e0b' }}>
-              <CalendarCheck size={28} />
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <FileSearch size={22} />
             </div>
-            <h3 className={styles.featureCardTitle}>GSTIN & Due Date Tracker</h3>
-            <p className={styles.featureCardDescription}>
-              Instant ISO 7064 Mod 36, M-36 checksum verification for 15-digit GSTINs, paired with real-time compliance deadlines for GSTR-1, GSTR-3B, and CMP-08.
+            <h3 className={styles.featureTitle}>Personal Document Vault</h3>
+            <p className={styles.featureDesc}>
+              Upload your notices, returns, and tax PDFs. Automated PyMuPDF + OCR extraction indexes them directly into your private query context.
             </p>
-            <ul className={styles.featureCardFooterList}>
-              <li><CheckCircle2 size={16} color="#f59e0b" /> Mod-36 mathematical checksum</li>
-              <li><CheckCircle2 size={16} color="#f59e0b" /> Monthly & quarterly due date alerts</li>
-              <li><CheckCircle2 size={16} color="#f59e0b" /> 11,000+ HSN & SAC code lookup</li>
+            <ul className={styles.featureList}>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> PDF magic-byte &amp; page validation</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Scanned PDF OCR support</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Live compliance score &amp; due dates</li>
             </ul>
           </div>
         </div>
       </section>
 
-      {/* ─── 5. Interactive Query Playground / Live Demo ────────────────── */}
-      <section id="playground" className={styles.playgroundSection}>
-        <div className={styles.playgroundContainer}>
-          <div className={styles.playgroundLeft}>
-            <div className={styles.badgePill} style={{ background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe' }}>
-              <Sparkles size={14} />
-              <span>Interactive Simulator</span>
+      {/* ─── 4. Interactive Query Playground ─────────────────────── */}
+      <section id="playground" className={styles.section}>
+        <div className={styles.playgroundCard}>
+          <div>
+            <div className={styles.sectionKicker}>
+              <Sparkles size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+              Interactive Simulator
             </div>
-            <h3>Test the Statutory AI Live</h3>
-            <p>
-              Select any real-world compliance scenario below to see how TaxSathi grounds its analysis with statutory authority and citations:
+            <h2 className={styles.sectionTitle} style={{ fontSize: '2rem', textAlign: 'left', marginBottom: 10 }}>
+              Inspect Statutory Grounding
+            </h2>
+            <p className={styles.sectionSubtitle} style={{ textAlign: 'left', fontSize: '0.96rem' }}>
+              Select a compliance scenario to see how TaxSathi structures its statutory verdict and citations.
             </p>
 
-            <div className={styles.queriesList}>
+            <div className={styles.queryList}>
               {DEMO_QUERIES.map((q) => (
                 <button
+                  type="button"
                   key={q.id}
                   onClick={() => setSelectedQuery(q)}
-                  className={`${styles.queryButton} ${selectedQuery.id === q.id ? styles.activeQuery : ''}`}
+                  className={`${styles.queryBtn} ${selectedQuery.id === q.id ? styles.queryBtnActive : ''}`}
                 >
                   <span>{q.title}</span>
                   <ChevronRight size={16} />
@@ -338,36 +342,33 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Interactive Playground Output Terminal */}
-          <div className={styles.playgroundRight}>
-            <div className={styles.terminalHeader}>
-              <div className={styles.terminalDots}>
-                <span className={`${styles.terminalDot} ${styles.dotRed}`} />
-                <span className={`${styles.terminalDot} ${styles.dotYellow}`} />
-                <span className={`${styles.terminalDot} ${styles.dotGreen}`} />
+          <div className={styles.terminal}>
+            <div className={styles.terminalHead}>
+              <div className={styles.dots}>
+                <span className={styles.dot} style={{ background: '#EF4444' }} />
+                <span className={styles.dot} style={{ background: '#F59E0B' }} />
+                <span className={styles.dot} style={{ background: '#22C55E' }} />
               </div>
-              <span className={styles.terminalTitle}>CBIC Statutory Grounding Engine</span>
-              <span style={{ fontSize: '0.75rem', color: '#4ade80' }}>● Grounded</span>
+              <span>CBIC Grounding Engine</span>
+              <span style={{ color: '#4ADE80' }}>● {selectedQuery.category}</span>
             </div>
 
-            <div className={styles.terminalQueryBox}>
-              <div className={styles.terminalLabel}>Query</div>
-              <div className={styles.terminalQuery}>{selectedQuery.title}</div>
-            </div>
+            <div className={styles.termLabel}>User Query</div>
+            <div className={styles.termQuery}>{selectedQuery.title}</div>
 
-            <div className={styles.terminalAnswerBox}>
-              <div className={styles.terminalLabel}>Statutory Analysis</div>
-              <div className={styles.terminalVerdict} style={{ color: selectedQuery.verdict.includes('✓') ? '#4ade80' : '#fbbf24' }}>
+            <div className={styles.termBodyBox}>
+              <div className={styles.termLabel}>Statutory Verdict</div>
+              <div
+                className={styles.termVerdict}
+                style={{ color: selectedQuery.ok ? '#4ADE80' : '#FBBF24' }}
+              >
                 {selectedQuery.verdict}
               </div>
-              <p className={styles.terminalBody}>{selectedQuery.explanation}</p>
-              
-              <div className={styles.terminalLabel}>Authoritative Citations</div>
-              <div className={styles.terminalCitations}>
-                {selectedQuery.citations.map((cite, i) => (
-                  <span key={i} className={styles.terminalCitationTag}>
-                    § {cite}
-                  </span>
+              <p className={styles.termText}>{selectedQuery.explanation}</p>
+              <div className={styles.termLabel}>Cited Authority</div>
+              <div className={styles.termCites}>
+                {selectedQuery.citations.map((cite) => (
+                  <span key={cite} className={styles.termCiteTag}>§ {cite}</span>
                 ))}
               </div>
             </div>
@@ -375,124 +376,188 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── 6. Modern Pricing / Plans Section ───────────────────────────── */}
-      <section id="pricing" className={styles.secondarySection} style={{ marginTop: '100px' }}>
-        <div className={styles.sectionKicker}>Transparent Pricing</div>
-        <h2 className={styles.secondaryTitle}>Simple Plans for Growing Businesses</h2>
-        <p className={styles.secondarySubtitle}>
-          Start free with statutory lookups or upgrade for high-volume invoice reconciliation and multi-client CA practices.
-        </p>
+      {/* ─── 5. GST Statutory Tools Suite ────────────────────────── */}
+      <section id="tools" className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionKicker}>Integrated Compliance Suite</div>
+          <h2 className={styles.sectionTitle}>Six Deterministic GST Tools Included</h2>
+          <p className={styles.sectionSubtitle}>
+            Run exact statutory calculations directly inside your workspace—no spreadsheets or outdated web widgets.
+          </p>
+        </div>
 
-        <div className={styles.featuresCardsGrid}>
-          {/* Free Tier */}
-          <div className={styles.featureCardItem}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Starter</span>
-            <h3 style={{ fontSize: '2.4rem', fontWeight: 800, margin: '8px 0 16px' }}>₹0 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 500 }}>/ month</span></h3>
-            <p className={styles.featureCardDescription}>For individual taxpayers and small traders wanting fast statutory answers.</p>
-            <ul className={styles.featureCardFooterList}>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> 50 AI Queries / month</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Basic GSTIN validator</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Standard tax calculators</li>
+        <div className={styles.toolsStrip}>
+          {TOOLS_SHOWCASE.map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <div key={tool.title} className={styles.toolCard}>
+                <div className={styles.toolIcon}>
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <div className={styles.toolTitle}>{tool.title}</div>
+                  <p className={styles.toolDesc}>{tool.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ─── 6. Statutory Sources ────────────────────────────────── */}
+      <section id="statutory" className={styles.section}>
+        <div className={styles.sectionHeader} style={{ marginBottom: 28 }}>
+          <div className={styles.sectionKicker}>Authoritative Corpus</div>
+          <h2 className={styles.sectionTitle}>Grounded in Official Gazettes</h2>
+        </div>
+
+        <div className={styles.statutoryBand}>
+          <div className={styles.sourceItem}>
+            <div className={styles.sourceTitle}>CGST &amp; IGST Acts, 2017</div>
+            <div className={styles.sourceSub}>Sections 9, 16, 17(5), 44, 47, 50</div>
+          </div>
+          <div className={styles.sourceItem}>
+            <div className={styles.sourceTitle}>CGST Rules, 2017</div>
+            <div className={styles.sourceSub}>Rules 32, 42, 43, 59–67, 96A</div>
+          </div>
+          <div className={styles.sourceItem}>
+            <div className={styles.sourceTitle}>CBIC Rate Notifications</div>
+            <div className={styles.sourceSub}>Notif. 1/2017, 11/2017, 56th Council</div>
+          </div>
+          <div className={styles.sourceItem}>
+            <div className={styles.sourceTitle}>Penalty &amp; Return Circulars</div>
+            <div className={styles.sourceSub}>Notif. 19/2021, 20/2021, 07/2023-CT</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 7. Pricing Plans ────────────────────────────────────── */}
+      <section id="pricing" className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionKicker}>Transparent Plans</div>
+          <h2 className={styles.sectionTitle}>Built for Solo Taxpayers &amp; CA Practices</h2>
+          <p className={styles.sectionSubtitle}>
+            Start free with statutory Q&amp;A and calculators, or scale up for firm-wide document analysis.
+          </p>
+        </div>
+
+        <div className={styles.grid3}>
+          <div className={styles.featureCard}>
+            <span className={styles.sectionKicker}>Starter</span>
+            <div className={styles.priceValue}>
+              ₹0 <span className={styles.priceUnit}>/ month</span>
+            </div>
+            <p className={styles.featureDesc}>For individual taxpayers and SMEs needing reliable statutory guidance.</p>
+            <ul className={styles.featureList}>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Statutory AI chat with citations</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> All 6 GST statutory tools</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Compliance score &amp; due dates</li>
             </ul>
-            <button onClick={() => handleAction('/register')} className={styles.pillGhostBtn} style={{ marginTop: '24px', justifyContent: 'center' }}>
+            <button
+              type="button"
+              onClick={() => handleAction('/register')}
+              className={styles.loginBtn}
+              style={{ marginTop: 20, border: '1px solid var(--rule)' }}
+            >
               Get Started Free
             </button>
           </div>
 
-          {/* Pro Tier (Featured) */}
-          <div className={styles.featureCardItem} style={{ border: '2px solid #4f46e5', boxShadow: '0 20px 40px rgba(79, 70, 229, 0.12)' }}>
+          <div className={`${styles.featureCard} ${styles.pricingFeatured}`}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase' }}>Professional CA</span>
-              <span style={{ background: '#ede9fe', color: '#4f46e5', fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '9999px' }}>POPULAR</span>
+              <span className={styles.sectionKicker} style={{ marginBottom: 0 }}>Professional CA</span>
+              <span className={styles.brandBadge}>RECOMMENDED</span>
             </div>
-            <h3 style={{ fontSize: '2.4rem', fontWeight: 800, margin: '8px 0 16px' }}>₹999 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 500 }}>/ month</span></h3>
-            <p className={styles.featureCardDescription}>For Chartered Accountants and tax consultants managing multiple clients.</p>
-            <ul className={styles.featureCardFooterList}>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Unlimited AI Queries</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Full Document & Invoice Upload</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Priority RAG Vector Pipeline</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Multi-client workspace</li>
+            <div className={styles.priceValue}>
+              ₹999 <span className={styles.priceUnit}>/ month</span>
+            </div>
+            <p className={styles.featureDesc}>For Chartered Accountants and tax advisors managing client filings.</p>
+            <ul className={styles.featureList}>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> High-volume AI statutory sessions</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> PDF notice &amp; return OCR indexing</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Saved bookmarks &amp; exportable history</li>
             </ul>
-            <button onClick={() => handleAction('/register')} className={styles.pillPrimaryBtn} style={{ marginTop: '24px', justifyContent: 'center' }}>
-              Start 14-Day Trial
+            <button
+              type="button"
+              onClick={() => handleAction('/register')}
+              className={styles.primaryPill}
+              style={{ marginTop: 20, justifyContent: 'center' }}
+            >
+              Start Professional Workspace
             </button>
           </div>
 
-          {/* Firm Tier */}
-          <div className={styles.featureCardItem}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Enterprise Firm</span>
-            <h3 style={{ fontSize: '2.4rem', fontWeight: 800, margin: '8px 0 16px' }}>Custom</h3>
-            <p className={styles.featureCardDescription}>For high-volume accounting firms, ERP integrations, and enterprise audits.</p>
-            <ul className={styles.featureCardFooterList}>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Custom API Access</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Dedicated VPC Deployment</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> Custom Rule 42/43 Workflows</li>
-              <li><CheckCircle2 size={16} color="#4f46e5" /> 24/7 SLA Support</li>
+          <div className={styles.featureCard}>
+            <span className={styles.sectionKicker}>Enterprise Firm</span>
+            <div className={styles.priceValue}>Custom</div>
+            <p className={styles.featureDesc}>For mid-to-large tax practices needing dedicated deployment and custom KBs.</p>
+            <ul className={styles.featureList}>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Private CBIC &amp; firm KB curation</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Admin audit &amp; security console</li>
+              <li><CheckCircle2 size={15} color="var(--accent)" /> Dedicated SLA &amp; API access</li>
             </ul>
-            <button onClick={() => handleAction('/register')} className={styles.pillGhostBtn} style={{ marginTop: '24px', justifyContent: 'center' }}>
-              Contact Sales
+            <button
+              type="button"
+              onClick={() => handleAction('/register')}
+              className={styles.loginBtn}
+              style={{ marginTop: 20, border: '1px solid var(--rule)' }}
+            >
+              Create Account
             </button>
           </div>
         </div>
       </section>
 
-      {/* ─── 7. Modern Clean Footer ─────────────────────────────────────── */}
-      <footer className={styles.footerContainer}>
+      {/* ─── 8. Footer ───────────────────────────────────────────── */}
+      <footer className={styles.footer}>
         <div className={styles.footerGrid}>
-          <div className={styles.footerBrandCol}>
+          <div>
             <Link to="/" className={styles.brand}>
               <div className={styles.brandIcon}>₹</div>
               <div className={styles.brandName}>
-                TaxSathi<span className={styles.brandSuffix}>AI</span>
+                TaxSathi <span className={styles.brandBadge}>AI</span>
               </div>
             </Link>
-            <p>
-              Authoritative, citation-grounded statutory AI assistant for Indian GST compliance, rules, and tax calculations.
+            <p className={styles.footerDesc}>
+              Citation-grounded Indian GST &amp; tax compliance assistant with deterministic calculators and document indexing.
             </p>
           </div>
 
           <div>
-            <div className={styles.footerColTitle}>Capabilities</div>
-            <ul className={styles.footerLinksList}>
-              <li><Link to="/chat">Statutory Chatbot</Link></li>
-              <li><Link to="/tools">GST Rate Calculator</Link></li>
-              <li><Link to="/tools">Late Fee Computation</Link></li>
-              <li><Link to="/tools">GSTIN Checksum</Link></li>
-              <li><Link to="/documents">Invoice Verification</Link></li>
+            <div className={styles.footerTitle}>Workspace</div>
+            <ul className={styles.footerList}>
+              <li><Link to="/chat">AI Tax Assistant</Link></li>
+              <li><Link to="/dashboard">Compliance Dashboard</Link></li>
+              <li><Link to="/tools">GST Statutory Tools</Link></li>
+              <li><Link to="/documents">Documents Vault</Link></li>
             </ul>
           </div>
 
           <div>
-            <div className={styles.footerColTitle}>Statutory Sources</div>
-            <ul className={styles.footerLinksList}>
+            <div className={styles.footerTitle}>Official Portals</div>
+            <ul className={styles.footerList}>
               <li><a href="https://cbic.gov.in" target="_blank" rel="noreferrer">CBIC Portal</a></li>
-              <li><a href="https://gst.gov.in" target="_blank" rel="noreferrer">GST Council</a></li>
-              <li><a href="https://gstcouncil.gov.in" target="_blank" rel="noreferrer">Central Tax Acts</a></li>
-              <li><a href="https://cbic-gst.gov.in" target="_blank" rel="noreferrer">GST Notifications</a></li>
+              <li><a href="https://gst.gov.in" target="_blank" rel="noreferrer">GST Portal</a></li>
+              <li><a href="https://gstcouncil.gov.in" target="_blank" rel="noreferrer">GST Council</a></li>
+              <li><a href="https://cbic-gst.gov.in" target="_blank" rel="noreferrer">CBIC GST Acts</a></li>
             </ul>
           </div>
 
           <div>
-            <div className={styles.footerColTitle}>Account</div>
-            <ul className={styles.footerLinksList}>
+            <div className={styles.footerTitle}>Account</div>
+            <ul className={styles.footerList}>
               <li><Link to="/login">Sign In</Link></li>
-              <li><Link to="/register">Create Free Account</Link></li>
-              <li><Link to="/admin/login">Admin Portal</Link></li>
+              <li><Link to="/register">Register Free</Link></li>
+              <li><Link to="/admin/login">Admin Console</Link></li>
             </ul>
           </div>
         </div>
 
         <div className={styles.footerBottom}>
-          <div>© {new Date().getFullYear()} TaxSathi AI. All statutory rights reserved.</div>
-          <div>
-            Statutory information sourced from cbic.gov.in. Not a substitute for certified chartered accountant advisory.
-          </div>
+          <span>© {new Date().getFullYear()} TaxSathi AI.</span>
+          <span>Statutory reference only — verify filings with a practicing Chartered Accountant.</span>
         </div>
       </footer>
     </motion.div>
   );
-}
-
-function trustStatStyle() {
-  return styles.trustStat;
 }

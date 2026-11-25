@@ -1,14 +1,17 @@
 /**
  * TaxSathi AI — Main App Component
- * React Router + AnimatePresence + Providers
+ * React Router + AnimatePresence + Theme/User Hydration + Providers
  */
 
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
-import { store } from './store/store';
+import { store, type AppDispatch } from './store/store';
+import { fetchUser } from './store/authSlice';
+import { applyTheme, getInitialTheme } from './utils/theme';
 
 // Pages
 import Landing from './pages/Landing';
@@ -39,7 +42,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuth = !!localStorage.getItem('access_token');
   if (!isAuth) return <Navigate to="/login" replace />;
@@ -52,7 +54,19 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Animated routes
+function AppBootstrap() {
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    applyTheme(getInitialTheme());
+    if (localStorage.getItem('access_token')) {
+      dispatch(fetchUser());
+    }
+  }, [dispatch]);
+
+  return null;
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
 
@@ -73,14 +87,14 @@ function AnimatedRoutes() {
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><AdminLayout><UserManagement /></AdminLayout></AdminRoute>} />
         <Route path="/admin/knowledge-base" element={<AdminRoute><AdminLayout><KnowledgeBase /></AdminLayout></AdminRoute>} />
         <Route path="/admin/activity" element={<AdminRoute><AdminLayout><ActivityTracker /></AdminLayout></AdminRoute>} />
         <Route path="/admin/security" element={<AdminRoute><AdminLayout><SecurityPanel /></AdminLayout></AdminRoute>} />
         <Route path="/admin/settings" element={<AdminRoute><AdminLayout><AppSettings /></AdminLayout></AdminRoute>} />
-        
+
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -93,6 +107,7 @@ function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <Router>
+          <AppBootstrap />
           <AnimatedRoutes />
           <Toaster
             position="top-right"
@@ -103,6 +118,7 @@ function App() {
                 border: '1px solid var(--rule)',
                 borderRadius: 'var(--radius)',
                 fontSize: 'var(--text-sm)',
+                boxShadow: 'var(--shadow-popover)',
               },
               success: { iconTheme: { primary: 'var(--accent)', secondary: 'var(--surface)' } },
               error: { iconTheme: { primary: 'var(--danger)', secondary: 'var(--surface)' } },

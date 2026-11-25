@@ -2,10 +2,10 @@
  * Auth Slice — JWT token management, user state, login/logout.
  */
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import api from '../utils/api';
 
-interface User {
+export interface User {
   id: number;
   name: string;
   email: string;
@@ -34,7 +34,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Async thunks
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
@@ -47,16 +46,24 @@ export const loginUser = createAsyncThunk(
       }
       return rejectWithValue(data.message);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Login failed');
+      return rejectWithValue(error.response?.data?.detail || error.response?.data?.message || 'Login failed');
     }
   }
 );
 
 export const registerUser = createAsyncThunk(
   'auth/register',
-  async (userData: { name: string; email: string; password: string; phone?: string }, { rejectWithValue }) => {
+  async (
+    userData: { name: string; email: string; password: string; phone?: string; gstin?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const { data } = await api.post('/auth/register', userData);
+      const payload = {
+        ...userData,
+        phone: userData.phone?.trim() || undefined,
+        gstin: userData.gstin?.trim() || undefined,
+      };
+      const { data } = await api.post('/auth/register', payload);
       if (data.success) {
         localStorage.setItem('access_token', data.data.access_token);
         localStorage.setItem('refresh_token', data.data.refresh_token);
@@ -64,7 +71,7 @@ export const registerUser = createAsyncThunk(
       }
       return rejectWithValue(data.message);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Registration failed');
+      return rejectWithValue(error.response?.data?.detail || error.response?.data?.message || 'Registration failed');
     }
   }
 );
@@ -75,7 +82,7 @@ export const fetchUser = createAsyncThunk(
     try {
       const { data } = await api.get('/auth/me');
       return data.data;
-    } catch (error: any) {
+    } catch {
       return rejectWithValue('Session expired');
     }
   }
@@ -101,6 +108,10 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+    },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
@@ -119,7 +130,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -130,7 +140,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Register
       .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -141,7 +150,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Fetch user
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.user = action.payload;
         state.isAuthenticated = true;
@@ -150,7 +158,6 @@ const authSlice = createSlice({
         state.user = null;
         state.isAuthenticated = false;
       })
-      // Admin login
       .addCase(adminLogin.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(adminLogin.fulfilled, (state) => {
         state.loading = false;
@@ -163,5 +170,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, adminLogout } = authSlice.actions;
+export const { setUser, logout, clearError, adminLogout } = authSlice.actions;
 export default authSlice.reducer;
