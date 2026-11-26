@@ -29,8 +29,10 @@ frontend-web/.env
 
 # ChromaDB & Index data
 chroma_data/
-data/
+/data/
 backend/data/
+!backend/app/services/data/
+!backend/app/services/data/**
 
 # Node
 node_modules/

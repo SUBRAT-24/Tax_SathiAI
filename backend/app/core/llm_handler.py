@@ -187,10 +187,14 @@ class LLMHandler:
         """Generate a helpful response from deterministic tool output or statutory fallback."""
         import re
         tool_match = re.search(
-            r'\[Deterministic Statutory Tool Result — ([^\]]+)\]\s*(\{.*?\}|\[.*?\])\s*(?:\n---|\nCONVERSATION|\Z)',
+            r'\[Deterministic Statutory Tool Result — ([^\]]+)\]\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*(?:\n\n|\n---|\nCONVERSATION|\Z)',
             prompt,
-            re.DOTALL,
         )
+        if not tool_match:
+            tool_match = re.search(
+                r'\[Deterministic Statutory Tool Result — ([^\]]+)\]\s*(\[[\s\S]*?\]|\{[\s\S]*?\})',
+                prompt,
+            )
         if tool_match:
             tool_name = tool_match.group(1).strip()
             try:

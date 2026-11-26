@@ -115,23 +115,47 @@ class RAGPipeline:
 
         # 5. HSN / SAC code or GST rate search: e.g. "hsn code for rice", "sac code for IT & software services"
         hsn_match = re.search(r'(?:hsn|sac|gst\s*rate)(?:\s*code)?(?:\s*and\s*(?:hsn|sac)(?:\s*code)?)?\s*(?:for|on)?\s*([a-z0-9&\s]+)', q)
-        if hsn_match:
-            keyword = re.sub(r'[?.,!]+$', '', hsn_match.group(1)).strip()
-            if keyword and len(keyword) >= 2:
-                results = search_hsn(keyword, limit=5)
-                if not results:
-                    # Try individual meaningful tokens longest-first (skip ambiguous 2-char words like "it" matching "substitutes")
-                    tokens = sorted(
-                        [t for t in re.split(r'[\s&,/]+', keyword) if len(t) >= 3 and t not in ("and", "the", "for", "services", "service")],
-                        key=len,
-                        reverse=True,
-                    )
-                    for tok in tokens:
-                        results = search_hsn(tok, limit=5)
-                        if results:
-                            break
+        if hsn_match or "hsn" in q or "sac" in q or "gst rate" in q:
+            raw_kw = hsn_match.group(1) if hsn_match else q
+            raw_kw = re.sub(r'[?.,!]+$', '', raw_kw).strip()
+            # Clean common words like "services", "trade", "hsn", "sac"
+            cleaned_kw = re.sub(r'\b(hsn|sac|code|gst|rate|what|is|the|for|on|under|services|service)\b', ' ', raw_kw).strip()
+            cleaned_kw = re.sub(r'\s+', ' ', cleaned_kw)
+
+            # First check for explicit 4-8 digit HSN/SAC code in query
+            code_match = re.search(r'\b(99\d{2,4}|\d{4,8})\b', q)
+            if code_match:
+                results = search_hsn(code_match.group(1), limit=20)
                 if results:
-                    return {"tool": "hsn_search", "result": results}
+                    kw_words = [w for w in cleaned_kw.lower().split() if len(w) >= 4]
+                    if kw_words:
+                        results.sort(
+                            key=lambda r: sum(1 for w in kw_words if w in r.get("description", "").lower()),
+                            reverse=True,
+                        )
+                    return {"tool": "hsn_search", "result": results[:5]}
+
+            results = []
+            if cleaned_kw and len(cleaned_kw) >= 3:
+                results = search_hsn(cleaned_kw, limit=5)
+
+            if not results and raw_kw and len(raw_kw) >= 3:
+                results = search_hsn(raw_kw, limit=5)
+
+            if not results:
+                # Try meaningful tokens longest-first
+                tokens = sorted(
+                    [t for t in re.split(r'[\s&,/]+', cleaned_kw or raw_kw) if len(t) >= 3 and t not in ("and", "the", "for", "with", "all")],
+                    key=len,
+                    reverse=True,
+                )
+                for tok in tokens:
+                    results = search_hsn(tok, limit=5)
+                    if results:
+                        break
+
+            if results:
+                return {"tool": "hsn_search", "result": results}
 
         return None
 
