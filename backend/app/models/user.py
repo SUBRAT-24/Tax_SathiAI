@@ -23,7 +23,7 @@ class User(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
+    role = Column(Enum(UserRole, native_enum=False, length=20), default=UserRole.USER, nullable=False)
 
     # Profile
     gstin = Column(String(255), nullable=True)  # Encrypted
