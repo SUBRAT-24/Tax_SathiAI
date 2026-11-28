@@ -81,7 +81,7 @@ export default api;
 // ─── Admin API (uses same base but admin token) ───
 export const adminApi = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 90000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -92,3 +92,15 @@ adminApi.interceptors.request.use((config) => {
   }
   return config;
 });
+
+adminApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const reqUrl: string = error.config?.url || '';
+    if (error.response?.status === 401 && !reqUrl.includes('/admin/login')) {
+      localStorage.removeItem('admin_token');
+      window.location.href = '/admin/login';
+    }
+    return Promise.reject(error);
+  }
+);

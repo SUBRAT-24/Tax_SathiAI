@@ -19,10 +19,11 @@ from app.models.activity_log import ActivityLog
 from app.models.document import KnowledgeBase
 from app.middleware import (
     get_admin_user,
-    verify_admin_credentials,
+    verify_admin_credentials_async,
+    verify_password_async,
     create_access_token,
     create_refresh_token,
-    hash_password,
+    hash_password_async,
 )
 from app.services.analytics_service import analytics_service
 from app.services.security_service import security_service
@@ -80,30 +81,51 @@ class SettingsUpdateRequest(BaseModel):
 
 @router.post("/login")
 async def admin_login(body: AdminLoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    """Admin login with hardcoded credentials from .env."""
-    if not verify_admin_credentials(body.email, body.password):
+    """Admin login via configured env credentials or a DB admin user."""
+    email = body.email.strip().lower()
+    is_env_admin = await verify_admin_credentials_async(email, body.password)
+    db_admin = None
+
+    if not is_env_admin:
+        res = await db.execute(
+            select(User).where(User.email == email, User.role == UserRole.ADMIN)
+        )
+        candidate = res.scalar_one_or_none()
+        if (
+            candidate
+            and candidate.is_active
+            and not candidate.is_banned
+            and await verify_password_async(body.password, candidate.password_hash)
+        ):
+            db_admin = candidate
+
+    if not is_env_admin and not db_admin:
         await security_service.log_security_event(
             db, "failed_login", ip_address=request.client.host if request.client else None,
-            details={"email": body.email, "type": "admin"}, severity="high",
+            details={"email": email, "type": "admin"}, severity="high",
         )
+        await db.commit()
         raise HTTPException(401, "Invalid admin credentials")
 
     await security_service.log_security_event(
-        db, "admin_login", ip_address=request.client.host if request.client else None,
-        details={"email": body.email}, severity="low",
+        db, "admin_login",
+        user_id=db_admin.id if db_admin else None,
+        ip_address=request.client.host if request.client else None,
+        details={"email": email}, severity="low",
     )
 
-    token = create_access_token({"sub": "admin", "role": "admin", "email": body.email})
-    refresh = create_refresh_token({"sub": "admin", "role": "admin"})
+    sub = str(db_admin.id) if db_admin else "admin"
+    token = create_access_token({"sub": sub, "role": "admin", "email": email})
+    refresh = create_refresh_token({"sub": sub, "role": "admin"})
 
     return success_response({
         "access_token": token,
         "refresh_token": refresh,
         "token_type": "bearer",
         "user": {
-            "email": body.email,
+            "email": email,
             "role": "admin",
-            "name": "Super Admin",
+            "name": db_admin.name if db_admin else "Super Admin",
         }
     }, "Admin login successful")
 
@@ -234,7 +256,7 @@ async def add_user(
     user = User(
         name=body.name,
         email=body.email,
-        password_hash=hash_password(body.password),
+        password_hash=await hash_password_async(body.password),
         role=UserRole.USER,
         phone=body.phone,
         gstin=body.gstin,
@@ -314,7 +336,7 @@ async def reset_user_password(
 ):
     """Reset a user's password."""
     user = await _get_user(db, user_id)
-    user.password_hash = hash_password(body.new_password)
+    user.password_hash = await hash_password_async(body.new_password)
     return success_response(message="Password reset successful")
 
 

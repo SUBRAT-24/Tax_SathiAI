@@ -83,7 +83,24 @@ async def get_current_user(
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    result = await db.execute(select(User).where(User.id == int(user_id)))
+    # Env-backed Super Admin token ("sub": "admin", "role": "admin")
+    if user_id == "admin" and payload.get("role") == "admin":
+        return User(
+            id=0,
+            name="Super Admin",
+            email=payload.get("email") or settings.ADMIN_EMAIL,
+            password_hash="",
+            role=UserRole.ADMIN,
+            is_active=True,
+            is_banned=False,
+        )
+
+    try:
+        uid = int(user_id)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    result = await db.execute(select(User).where(User.id == uid))
     user = result.scalar_one_or_none()
 
     if not user:
@@ -107,10 +124,15 @@ async def get_admin_user(
 
 def verify_admin_credentials(email: str, password: str) -> bool:
     """Verify admin credentials against environment variables."""
-    if email != settings.ADMIN_EMAIL:
+    if email.strip().lower() != settings.ADMIN_EMAIL.strip().lower():
         return False
     password_hash = settings.ADMIN_PASSWORD_HASH
     if not password_hash:
         return False  # ADMIN_PASSWORD not configured
     return verify_password(password, password_hash)
+
+
+async def verify_admin_credentials_async(email: str, password: str) -> bool:
+    """Verify admin credentials off the asyncio event loop."""
+    return await asyncio.to_thread(verify_admin_credentials, email, password)
 

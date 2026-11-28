@@ -7,7 +7,7 @@ from sqlalchemy import select, func, text, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import utc_now_naive
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.chat import ChatSession, ChatMessage
 from app.models.activity_log import ActivityLog
 from app.models.feedback import QueryAnalytics, SecurityLog
@@ -19,13 +19,13 @@ class AnalyticsService:
     async def get_overview(self, db: AsyncSession) -> dict:
         """Get platform overview stats."""
         # Total users
-        total_users = await db.scalar(select(func.count(User.id)).where(User.role == "user"))
+        total_users = await db.scalar(select(func.count(User.id)).where(User.role == UserRole.USER))
 
         # Active users (logged in within 30 days)
         thirty_days_ago = utc_now_naive() - timedelta(days=30)
         active_users = await db.scalar(
             select(func.count(User.id)).where(
-                and_(User.last_login >= thirty_days_ago, User.role == "user")
+                and_(User.last_login >= thirty_days_ago, User.role == UserRole.USER)
             )
         )
 
@@ -121,14 +121,22 @@ class AnalyticsService:
         }
 
     async def get_usage_heatmap(self, db: AsyncSession, days: int = 30) -> list[dict]:
-        """Get usage heatmap data (hour × day-of-week)."""
+        """Get usage heatmap data (hour × day-of-week), dialect-safe for SQLite & PostgreSQL."""
         since = utc_now_naive() - timedelta(days=days)
+        bind = db.get_bind()
+        dialect_name = bind.dialect.name if bind else "sqlite"
 
-        # Get activity counts by hour and day
+        if dialect_name == "sqlite":
+            dow_expr = func.strftime("%w", ActivityLog.timestamp).label("day_of_week")
+            hour_expr = func.strftime("%H", ActivityLog.timestamp).label("hour")
+        else:
+            dow_expr = func.extract("dow", ActivityLog.timestamp).label("day_of_week")
+            hour_expr = func.extract("hour", ActivityLog.timestamp).label("hour")
+
         result = await db.execute(
             select(
-                func.strftime('%w', ActivityLog.timestamp).label("day_of_week"),
-                func.strftime('%H', ActivityLog.timestamp).label("hour"),
+                dow_expr,
+                hour_expr,
                 func.count(ActivityLog.id).label("count"),
             ).where(ActivityLog.timestamp >= since)
             .group_by("day_of_week", "hour")

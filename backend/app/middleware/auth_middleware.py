@@ -14,6 +14,7 @@ from app.middleware import (
     get_current_user,
     get_admin_user,
     verify_admin_credentials,
+    verify_admin_credentials_async,
 )
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "get_current_user",
     "get_admin_user",
     "verify_admin_credentials",
+    "verify_admin_credentials_async",
 ]
