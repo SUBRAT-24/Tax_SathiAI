@@ -45,6 +45,16 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.CHROMADB_PERSIST_DIR, exist_ok=True)
     print("   [OK] Upload directories ready")
 
+    # Pre-warm DB connection pool in background so first auth/API request avoids cold TLS handshake
+    async def _warmup_db():
+        try:
+            await check_db_connection()
+            print("   [OK] Database connection pool pre-warmed")
+        except Exception as e:
+            print(f"   [WARN] DB pre-warm failed: {e}")
+
+    db_warmup_task = asyncio.create_task(_warmup_db())
+
     # Pre-warm vector store & embeddings model in background in dev so first query is fast
     # (Skip eager PyTorch load in production to stay within Render's 512MB free-tier RAM during startup)
     warmup_task = None
@@ -65,6 +75,8 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    if db_warmup_task is not None:
+        db_warmup_task.cancel()
     if warmup_task is not None:
         warmup_task.cancel()
 
