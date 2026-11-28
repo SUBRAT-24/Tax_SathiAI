@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,6 +8,7 @@ import { pageVariants } from '../animations/variants';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Sun, Moon } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useTheme } from '../utils/theme';
+import { wakeBackend } from '../utils/api';
 import toast from 'react-hot-toast';
 import styles from './Auth.module.css';
 
@@ -20,6 +21,10 @@ export default function Register() {
   const navigate = useNavigate();
   const { loading } = useSelector((state: RootState) => state.auth);
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    wakeBackend();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

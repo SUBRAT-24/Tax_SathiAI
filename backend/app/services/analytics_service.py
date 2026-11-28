@@ -2,10 +2,11 @@
 Analytics Service — aggregation queries for admin dashboards.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from sqlalchemy import select, func, text, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import utc_now_naive
 from app.models.user import User
 from app.models.chat import ChatSession, ChatMessage
 from app.models.activity_log import ActivityLog
@@ -21,7 +22,7 @@ class AnalyticsService:
         total_users = await db.scalar(select(func.count(User.id)).where(User.role == "user"))
 
         # Active users (logged in within 30 days)
-        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+        thirty_days_ago = utc_now_naive() - timedelta(days=30)
         active_users = await db.scalar(
             select(func.count(User.id)).where(
                 and_(User.last_login >= thirty_days_ago, User.role == "user")
@@ -29,7 +30,7 @@ class AnalyticsService:
         )
 
         # Today's active users (DAU)
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
+        today_start = utc_now_naive().replace(hour=0, minute=0, second=0)
         dau = await db.scalar(
             select(func.count(func.distinct(ActivityLog.user_id))).where(
                 ActivityLog.timestamp >= today_start
@@ -74,14 +75,14 @@ class AnalyticsService:
         }
 
     async def _count_new_users_today(self, db: AsyncSession) -> int:
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
+        today_start = utc_now_naive().replace(hour=0, minute=0, second=0)
         return await db.scalar(
             select(func.count(User.id)).where(User.created_at >= today_start)
         ) or 0
 
     async def get_query_analytics(self, db: AsyncSession, days: int = 30) -> dict:
         """Get query volume and intent distribution."""
-        since = datetime.now(timezone.utc) - timedelta(days=days)
+        since = utc_now_naive() - timedelta(days=days)
 
         # Query volume by day
         result = await db.execute(
@@ -121,7 +122,7 @@ class AnalyticsService:
 
     async def get_usage_heatmap(self, db: AsyncSession, days: int = 30) -> list[dict]:
         """Get usage heatmap data (hour × day-of-week)."""
-        since = datetime.now(timezone.utc) - timedelta(days=days)
+        since = utc_now_naive() - timedelta(days=days)
 
         # Get activity counts by hour and day
         result = await db.execute(

@@ -4,10 +4,10 @@ Dashboard API — User stats, deadlines, compliance score.
 
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, utc_now_naive
 from app.models.user import User
 from app.models.chat import ChatSession, ChatMessage
 from app.models.document import Document
@@ -26,57 +26,38 @@ async def get_stats(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get user's dashboard stats."""
-    # Total queries
-    total_queries = await db.scalar(
-        select(func.count(ChatMessage.id)).join(
-            ChatSession, ChatMessage.session_id == ChatSession.id
-        ).where(
-            ChatSession.user_id == current_user.id,
-            ChatMessage.role == "user",
+    """Get user's dashboard stats in minimal DB round-trips."""
+    msg_stats_row = (
+        await db.execute(
+            select(
+                func.count(case((ChatMessage.role == "user", 1))).label("total_queries"),
+                func.count(case((ChatMessage.is_bookmarked == 1, 1))).label("bookmarks"),
+                func.avg(ChatMessage.confidence_score).label("avg_confidence"),
+            )
+            .select_from(ChatMessage)
+            .join(ChatSession, ChatMessage.session_id == ChatSession.id)
+            .where(ChatSession.user_id == current_user.id)
         )
-    )
+    ).one()
 
-    # Total sessions
     total_sessions = await db.scalar(
         select(func.count(ChatSession.id)).where(
             ChatSession.user_id == current_user.id
         )
     )
 
-    # Documents uploaded
     total_docs = await db.scalar(
         select(func.count(Document.id)).where(
             Document.user_id == current_user.id
         )
     )
 
-    # Bookmarked answers
-    bookmarks = await db.scalar(
-        select(func.count(ChatMessage.id)).join(
-            ChatSession, ChatMessage.session_id == ChatSession.id
-        ).where(
-            ChatSession.user_id == current_user.id,
-            ChatMessage.is_bookmarked == 1,
-        )
-    )
-
-    # Average confidence of responses
-    avg_confidence = await db.scalar(
-        select(func.avg(ChatMessage.confidence_score)).join(
-            ChatSession, ChatMessage.session_id == ChatSession.id
-        ).where(
-            ChatSession.user_id == current_user.id,
-            ChatMessage.confidence_score.isnot(None),
-        )
-    )
-
     return success_response({
-        "total_queries": total_queries or 0,
+        "total_queries": msg_stats_row.total_queries or 0,
         "total_sessions": total_sessions or 0,
         "total_documents": total_docs or 0,
-        "bookmarked_answers": bookmarks or 0,
-        "avg_confidence": round(float(avg_confidence or 0), 2),
+        "bookmarked_answers": msg_stats_row.bookmarks or 0,
+        "avg_confidence": round(float(msg_stats_row.avg_confidence or 0), 2),
         "member_since": current_user.created_at.isoformat() if current_user.created_at else None,
     })
 
@@ -129,7 +110,7 @@ async def get_compliance_score(
         score += 5
 
     # Engagement bonus
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    thirty_days_ago = utc_now_naive() - timedelta(days=30)
     recent_queries = await db.scalar(
         select(func.count(ChatMessage.id)).join(
             ChatSession, ChatMessage.session_id == ChatSession.id

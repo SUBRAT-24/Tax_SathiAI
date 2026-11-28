@@ -31,9 +31,12 @@ async def lifespan(app: FastAPI):
     print(f"   Environment: {settings.ENVIRONMENT}")
     print(f"   Debug: {settings.DEBUG}")
 
-    # Initialize database
-    await init_db()
-    print("   [OK] Database initialized")
+    # Initialize database (dev/SQLite only; production uses Alembic migrations)
+    if settings.ENVIRONMENT != "production":
+        await init_db()
+        print("   [OK] Database initialized")
+    else:
+        print("   [OK] Database ready (managed by Alembic)")
 
     # Create upload directories
     import asyncio

@@ -88,23 +88,22 @@
 /* Loading state */
 .loading {
   position: relative;
-  color: transparent;
   pointer-events: none;
+  opacity: 0.85;
+  padding-right: calc(var(--space-4) + 20px);
 }
 
 .loading::after {
   content: '';
-  position: absolute;
+  display: inline-block;
   width: 16px;
   height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
+  margin-left: 8px;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
 }
 
 @keyframes spin {

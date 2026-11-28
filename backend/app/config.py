@@ -203,7 +203,7 @@ class Settings(BaseSettings):
             import bcrypt
             hashed = bcrypt.hashpw(
                 self.ADMIN_PASSWORD.encode("utf-8"),
-                bcrypt.gensalt(),
+                bcrypt.gensalt(rounds=10),
             ).decode("utf-8")
             object.__setattr__(self, "_admin_password_hash", hashed)
 

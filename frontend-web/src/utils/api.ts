@@ -6,6 +6,15 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const HEALTH_URL = API_BASE_URL.replace(/\/api\/v1\/?$/, '') + '/health';
+
+let lastWakePing = 0;
+export function wakeBackend(): void {
+  const now = Date.now();
+  if (now - lastWakePing < 60_000) return;
+  lastWakePing = now;
+  fetch(HEALTH_URL, { method: 'GET', mode: 'cors' }).catch(() => {});
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -32,8 +41,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const reqUrl: string = originalRequest?.url || '';
+    const isAuthAttempt = reqUrl.includes('/auth/login') || reqUrl.includes('/auth/register');
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthAttempt) {
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem('refresh_token');

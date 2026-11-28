@@ -3,10 +3,16 @@ TaxSathi AI — Database Configuration
 Async SQLAlchemy engine, session factory, and Base model.
 """
 
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
 from app.config import settings
+
+
+def utc_now_naive() -> datetime:
+    """Return current UTC datetime without tzinfo for TIMESTAMP WITHOUT TIME ZONE columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 # Naming convention for constraints (Alembic-friendly)
 convention = {
@@ -45,8 +51,8 @@ elif "postgresql" in settings.DATABASE_URL:
     engine_kwargs.update({
         "pool_size": getattr(settings, "DB_POOL_SIZE", 10),
         "max_overflow": getattr(settings, "DB_MAX_OVERFLOW", 20),
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
+        "pool_pre_ping": False,
+        "pool_recycle": 120,
     })
 
 # Async engine

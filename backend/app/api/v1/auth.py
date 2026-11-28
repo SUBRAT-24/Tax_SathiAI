@@ -2,20 +2,20 @@
 Auth API — User registration, login, logout, refresh, password reset.
 """
 
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, utc_now_naive
 from app.models.user import User, UserRole
 from app.middleware import (
     create_access_token,
     create_refresh_token,
     verify_token,
-    hash_password,
-    verify_password,
+    hash_password_async,
+    verify_password_async,
     get_current_user,
 )
 from app.middleware.activity_tracker import log_login, log_logout, log_activity
@@ -61,21 +61,22 @@ def success_response(data=None, message="Success"):
 @router.post("/register")
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """Register a new user account."""
-    # Check if email exists
-    existing = await db.execute(select(User).where(User.email == body.email))
-    if existing.scalar_one_or_none():
-        raise HTTPException(400, "Email already registered")
+    password_hash = await hash_password_async(body.password)
 
     user = User(
         name=body.name,
         email=body.email,
-        password_hash=hash_password(body.password),
+        password_hash=password_hash,
         role=UserRole.USER,
         phone=body.phone,
         gstin=body.gstin,
     )
     db.add(user)
-    await db.flush()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(400, "Email already registered")
 
     tokens = _create_tokens(user)
 
@@ -91,7 +92,7 @@ async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(body.password, user.password_hash):
+    if not user or not await verify_password_async(body.password, user.password_hash):
         # Log failed login
         await security_service.log_security_event(
             db, "failed_login",
@@ -107,8 +108,8 @@ async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends
     if user.is_banned:
         raise HTTPException(403, f"Account banned: {user.ban_reason or 'Contact admin'}")
 
-    # Update last login
-    user.last_login = datetime.now(timezone.utc)
+    # Update last login (naive UTC matches TIMESTAMP WITHOUT TIME ZONE)
+    user.last_login = utc_now_naive()
     user.login_count = (user.login_count or 0) + 1
 
     await log_login(db, user.id, request)
@@ -183,10 +184,10 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     """Change password for current user."""
-    if not verify_password(body.current_password, current_user.password_hash):
+    if not await verify_password_async(body.current_password, current_user.password_hash):
         raise HTTPException(400, "Current password is incorrect")
 
-    current_user.password_hash = hash_password(body.new_password)
+    current_user.password_hash = await hash_password_async(body.new_password)
     await log_activity(db, current_user.id, "password_change", "Changed password", request=request)
     return success_response(message="Password changed successfully")
 
@@ -220,7 +221,7 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     if not user:
         raise HTTPException(404, "User not found")
 
-    user.password_hash = hash_password(body.new_password)
+    user.password_hash = await hash_password_async(body.new_password)
     return success_response(message="Password reset successful")
 
 

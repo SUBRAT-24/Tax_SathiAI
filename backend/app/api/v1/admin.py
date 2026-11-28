@@ -12,7 +12,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select, func, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, utc_now_naive
 from app.models.user import User, UserRole
 from app.models.chat import ChatSession, ChatMessage
 from app.models.activity_log import ActivityLog
@@ -482,7 +482,7 @@ async def upload_knowledge_base(
             file_path, file.filename, category="knowledge_base", doc_id=f"kb_{kb_doc.id}"
         )
         kb_doc.chunks_count = result.get("chunks_count", 0)
-        kb_doc.ingested_at = datetime.now(timezone.utc)
+        kb_doc.ingested_at = utc_now_naive()
     except Exception as e:
         kb_doc.is_active = False
 
@@ -528,7 +528,7 @@ async def reindex_knowledge_base(
                     doc.file_path, doc.doc_name, doc_id=f"kb_{doc.id}"
                 )
                 doc.chunks_count = res.get("chunks_count", 0)
-                doc.ingested_at = datetime.now(timezone.utc)
+                doc.ingested_at = utc_now_naive()
                 indexed += 1
             except Exception:
                 pass
@@ -595,7 +595,7 @@ async def get_active_sessions(
 ):
     """Get currently active user sessions (based on recent activity)."""
     from datetime import timedelta
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    cutoff = utc_now_naive() - timedelta(minutes=30)
 
     result = await db.execute(
         select(

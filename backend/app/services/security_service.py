@@ -2,10 +2,11 @@
 Security Service — failed login tracking, IP blocking, session management.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from sqlalchemy import select, func, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import utc_now_naive
 from app.models.feedback import SecurityLog
 from app.models.notification import BlockedIP
 
@@ -34,7 +35,7 @@ class SecurityService:
 
     async def get_failed_logins(self, db: AsyncSession, hours: int = 24) -> list[dict]:
         """Get recent failed login attempts."""
-        since = datetime.now(timezone.utc) - timedelta(hours=hours)
+        since = utc_now_naive() - timedelta(hours=hours)
         result = await db.execute(
             select(SecurityLog).where(
                 and_(
@@ -64,7 +65,7 @@ class SecurityService:
         blocked = result.scalar_one_or_none()
         if not blocked:
             return False
-        if blocked.expires_at and blocked.expires_at < datetime.now(timezone.utc):
+        if blocked.expires_at and blocked.expires_at < utc_now_naive():
             # Expired block — remove it
             await db.delete(blocked)
             return False
@@ -74,7 +75,7 @@ class SecurityService:
         """Block an IP address."""
         expires = None
         if hours:
-            expires = datetime.now(timezone.utc) + timedelta(hours=hours)
+            expires = utc_now_naive() + timedelta(hours=hours)
 
         existing = await db.execute(select(BlockedIP).where(BlockedIP.ip_address == ip))
         blocked = existing.scalar_one_or_none()
@@ -119,7 +120,7 @@ class SecurityService:
 
     async def check_brute_force(self, db: AsyncSession, ip: str, threshold: int = 5) -> bool:
         """Check if an IP has too many failed logins (brute force detection)."""
-        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+        one_hour_ago = utc_now_naive() - timedelta(hours=1)
         count = await db.scalar(
             select(func.count(SecurityLog.id)).where(
                 and_(

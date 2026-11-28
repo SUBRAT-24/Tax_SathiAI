@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,7 +8,7 @@ import { pageVariants } from '../animations/variants';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Sun, Moon } from 'lucide-react';
 import { Button, Input, Modal } from '../components/ui';
 import { useTheme } from '../utils/theme';
-import api from '../utils/api';
+import api, { wakeBackend } from '../utils/api';
 import toast from 'react-hot-toast';
 import styles from './Auth.module.css';
 
@@ -16,6 +16,10 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+
+  useEffect(() => {
+    wakeBackend();
+  }, []);
 
   // Forgot / Reset password modal state
   const [forgotOpen, setForgotOpen] = useState(false);

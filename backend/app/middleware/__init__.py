@@ -3,6 +3,7 @@ JWT Authentication Middleware
 Handles token verification, role checking, and admin guard.
 """
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import Depends, HTTPException, status, Request
@@ -17,6 +18,7 @@ from app.database import get_db
 from app.models.user import User, UserRole
 
 security = HTTPBearer(auto_error=False)
+_BCRYPT_ROUNDS = 10
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -49,13 +51,23 @@ def verify_token(token: str, token_type: str = "access") -> dict:
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    """Hash a password using bcrypt (cost 10 for responsive auth on constrained CPUs)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=_BCRYPT_ROUNDS)).decode("utf-8")
+
+
+async def hash_password_async(password: str) -> str:
+    """Hash a password off the asyncio event loop."""
+    return await asyncio.to_thread(hash_password, password)
 
 
 def verify_password(password: str, hashed: str) -> bool:
     """Verify a password against its bcrypt hash."""
     return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+
+
+async def verify_password_async(password: str, hashed: str) -> bool:
+    """Verify a password off the asyncio event loop."""
+    return await asyncio.to_thread(verify_password, password, hashed)
 
 
 async def get_current_user(

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { pageVariants } from '../animations/variants';
 import { useTheme } from '../utils/theme';
+import { wakeBackend } from '../utils/api';
 import styles from './Landing.module.css';
 
 const DEMO_QUERIES = [
@@ -92,6 +93,10 @@ export default function Landing() {
   const [selectedQuery, setSelectedQuery] = useState(DEMO_QUERIES[0]);
   const { theme, toggleTheme } = useTheme();
   const isAuth = !!localStorage.getItem('access_token');
+
+  useEffect(() => {
+    wakeBackend();
+  }, []);
 
   const handleAction = (path: string) => {
     if (isAuth && (path === '/login' || path === '/register')) {
